@@ -37,3 +37,6 @@ Thumbs.db
 .cache/
 suite/*/data/
 next-env.d.ts
+
+# Built by `npm run build:plugin` (portage init builds it on setup)
+plugin/server/

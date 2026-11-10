@@ -6,6 +6,15 @@
       "headers": {
         "X-Apimatic-Mcp-Client": "Cursor"
       }
+    },
+    "portage": {
+      "command": "node",
+      "args": [
+        "--import",
+        "tsx",
+        "${workspaceFolder}/packages/mcp-server/src/index.ts"
+      ],
+      "cwd": "${workspaceFolder}"
     }
   }
 }

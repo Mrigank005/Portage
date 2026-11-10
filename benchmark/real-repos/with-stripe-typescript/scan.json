@@ -1,0 +1,324 @@
+{
+  "tool": "portage",
+  "kind": "scan",
+  "version": 1,
+  "repo": {
+    "path": "https://github.com/vercel/next.js/tree/4d51724b7c1ce377bce7564e6a5237d2846d0867/examples/with-stripe-typescript",
+    "name": "with-stripe-typescript"
+  },
+  "languages": {
+    "TypeScript": 25,
+    "JavaScript": 1
+  },
+  "apps": [
+    {
+      "root": ".",
+      "name": "with-stripe-typescript",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js latest (App Router)",
+        "version": "latest",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "14.8.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "lib/stripe.ts",
+          "line": 5,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2023-10-16",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "app/actions/stripe.ts",
+          "line": 21,
+          "route": {
+            "kind": "next-action",
+            "method": "ACTION",
+            "path": "createCheckoutSession",
+            "file": "app/actions/stripe.ts",
+            "line": 21
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price_data",
+              "unitAmount": "formatAmountForStripe( Number(data.get(\"customDonation\") as string), CURRENCY, )",
+              "productName": "Custom amount donation",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "mode": "payment",
+            "submit_type": "donate",
+            "ui_mode": "ui_mode"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "usesSessionIdPlaceholder": false,
+          "response": "client-secret",
+          "sessionVar": "checkoutSession",
+          "sessionIdStoredAs": [],
+          "appCalls": [
+            {
+              "name": "formatAmountForStripe",
+              "line": 32,
+              "module": "@/utils/stripe-helpers",
+              "definedIn": {
+                "file": "utils/stripe-helpers.ts",
+                "line": 13
+              },
+              "params": "amount: number, currency: string"
+            }
+          ],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "app/api/webhooks/route.ts",
+          "line": 11,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhooks",
+            "file": "app/api/webhooks/route.ts",
+            "line": 11
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 41,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 45,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.succeeded",
+              "line": 49,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "app/actions/stripe.ts",
+          "line": 21,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create({ mode: \"payment\", submit_type: \"donate\", line_items: [ { quantity: 1, price_data: { cu…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false,
+          "enclosing": "createCheckoutSession"
+        },
+        {
+          "file": "app/actions/stripe.ts",
+          "line": 59,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create({ amount: formatAmountForStripe( Number(data.get(\"customDonation\") as string), CURRENCY, )…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false,
+          "enclosing": "createPaymentIntent"
+        },
+        {
+          "file": "app/api/webhooks/route.ts",
+          "line": 11,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( await (await req.blob()).text(), req.headers.get(\"stripe-signature\") as string, process…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "app/donate-with-checkout/result/page.tsx",
+          "line": 15,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(searchParams.session_id, { expand: [\"line_items\", \"payment_intent\"], })",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "ResultPage"
+        },
+        {
+          "file": "app/donate-with-elements/result/page.tsx",
+          "line": 15,
+          "path": "paymentIntents.retrieve",
+          "snippet": "stripe.paymentIntents.retrieve(searchParams.payment_intent)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "payment-read",
+          "inTest": false,
+          "enclosing": "ResultPage"
+        },
+        {
+          "file": "app/donate-with-embedded-checkout/result/page.tsx",
+          "line": 15,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(searchParams.session_id, { expand: [\"line_items\", \"payment_intent\"], })",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "ResultPage"
+        }
+      ],
+      "clientSide": [
+        {
+          "file": "app/components/CheckoutForm.tsx",
+          "line": 73,
+          "kind": "embedded-checkout",
+          "detail": "uses embedded Stripe Checkout"
+        },
+        {
+          "file": "app/components/CheckoutForm.tsx",
+          "line": 77,
+          "kind": "embedded-checkout",
+          "detail": "uses embedded Stripe Checkout"
+        },
+        {
+          "file": "app/components/ElementsForm.tsx",
+          "line": 3,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "app/components/ElementsForm.tsx",
+          "line": 97,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "app/components/ElementsForm.tsx",
+          "line": 149,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "utils/get-stripejs.ts",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        }
+      ],
+      "triggers": [
+        {
+          "file": "app/components/CheckoutForm.tsx",
+          "line": 42,
+          "target": "server action createCheckoutSession",
+          "snippet": "const { client_secret, url } = await createCheckoutSession(data);"
+        }
+      ],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "utils/get-stripejs.ts",
+              "line": 11
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "lib/stripe.ts",
+              "line": 5
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "app/api/webhooks/route.ts",
+              "line": 14
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": ".env.local.example",
+          "keys": [
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "STRIPE_SECRET_KEY",
+            "STRIPE_PAYMENT_DESCRIPTION",
+            "STRIPE_WEBHOOK_SECRET"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_STAY",
+          "severity": "needs-human",
+          "message": "Also has a custom card form (Stripe Elements). Portage leaves it on Stripe.",
+          "where": [
+            {
+              "file": "app/components/ElementsForm.tsx",
+              "line": 97
+            },
+            {
+              "file": "app/components/ElementsForm.tsx",
+              "line": 149
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "app/actions/stripe.ts",
+              "line": 59
+            }
+          ]
+        }
+      ],
+      "supported": true
+    }
+  ],
+  "otherLanguages": [],
+  "issues": [],
+  "supported": true,
+  "stats": {
+    "filesSeen": 38,
+    "filesParsed": 15,
+    "ms": 0
+  }
+}

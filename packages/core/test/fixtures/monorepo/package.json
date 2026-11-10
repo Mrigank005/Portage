@@ -1,0 +1,6 @@
+{
+  "name": "monorepo",
+  "private": true,
+  "description": "Fixture: a workspace with a Next.js web app, a UI package and a Python billing service.",
+  "workspaces": ["apps/*", "packages/*"]
+}

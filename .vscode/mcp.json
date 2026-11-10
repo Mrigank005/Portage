@@ -3,6 +3,16 @@
     "context-matic": {
       "type": "http",
       "url": "https://chatbotapi.apimatic.io/mcp/plugins"
+    },
+    "portage": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "--import",
+        "tsx",
+        "${workspaceFolder}/packages/mcp-server/src/index.ts"
+      ],
+      "cwd": "${workspaceFolder}"
     }
   }
 }

@@ -16,9 +16,11 @@ Every coding agent we develop with is configured to load ContextMatic from this 
 
 The first time an agent connects, ContextMatic asks you to sign in through your browser. No APIMatic credentials are needed for the PayPal SDK.
 
-## 2. Inside Portage *(in development)*
+We also used ContextMatic to build Portage's [Stripe→PayPal map](../packages/core/maps/stripe-paypal.json): every PayPal SDK method and model the map names was confirmed through a lookup, and a test fails if the map names one that wasn't. One lookup changed the design: ContextMatic showed that the SDK has no webhook methods, so Portage plans a direct call to PayPal's webhook verification API instead of an SDK call that doesn't exist. The full record is in [contextmatic-lookups.md](contextmatic-lookups.md).
 
-Portage itself is a plugin for coding agents. Its plugin configuration already registers ContextMatic ([`plugin/.mcp.json`](../plugin/.mcp.json)); Portage's own MCP server will sit next to it. When Portage migrates a codebase, its skill will direct the agent as follows:
+## 2. Inside Portage
+
+Portage itself is a plugin for coding agents. Its plugin configuration registers ContextMatic ([`plugin/.mcp.json`](../plugin/.mcp.json)) next to Portage's own MCP server. Every plan from `plan_migration` lists, for each step, the ContextMatic lookups to make before writing that step's code, and the [portage-migrate skill](../plugin/skills/portage-migrate/SKILL.md) requires them and asks for them to be logged in the pull request:
 
 | Migration step | ContextMatic tool | Why |
 |---|---|---|

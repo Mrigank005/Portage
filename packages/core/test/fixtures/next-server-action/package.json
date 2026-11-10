@@ -1,0 +1,6 @@
+{
+  "name": "next-server-action",
+  "private": true,
+  "description": "Fixture: patterns found in real open-source apps. A server action that builds Checkout params in branches, a webhook that copies event.type into a variable assigned later, and a custom Elements UI on Checkout Sessions.",
+  "dependencies": { "next": "^16.0.0", "react": "^19.0.0", "stripe": "^23.0.0" }
+}

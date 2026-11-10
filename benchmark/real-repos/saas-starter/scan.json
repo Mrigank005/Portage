@@ -1,0 +1,408 @@
+{
+  "tool": "portage",
+  "kind": "scan",
+  "version": 1,
+  "repo": {
+    "path": "https://github.com/nextjs/saas-starter/tree/6e33e58b1e553a41fe22e6b941a7229a002de361",
+    "name": "saas-starter"
+  },
+  "languages": {
+    "TypeScript": 41,
+    "JavaScript": 1
+  },
+  "apps": [
+    {
+      "root": ".",
+      "name": "saas-starter",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 15.6.0 (App Router)",
+        "version": "15.6.0",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "18.1.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 10,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-04-30.basil",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 27,
+          "modes": [
+            "subscription"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "priceId",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "payment_method_types": "['card']",
+            "mode": "subscription",
+            "success_url": "${process.env.BASE_URL}/api/stripe/checkout?session_id={CHECKOUT_SESSION_ID}",
+            "cancel_url": "${process.env.BASE_URL}/pricing",
+            "customer": "team.stripeCustomerId || undefined",
+            "client_reference_id": "user.id.toString()",
+            "allow_promotion_codes": "true",
+            "subscription_data": "{ trial_period_days: 14 }",
+            "subscription_data.trial_period_days": "14"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "${process.env.BASE_URL}/api/stripe/checkout?session_id={CHECKOUT_SESSION_ID}",
+          "cancelUrl": "${process.env.BASE_URL}/pricing",
+          "usesSessionIdPlaceholder": true,
+          "response": "redirect",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [
+            {
+              "name": "getUser",
+              "line": 21,
+              "module": "@/lib/db/queries",
+              "definedIn": {
+                "file": "lib/db/queries.ts",
+                "line": 7
+              },
+              "params": ""
+            }
+          ],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "app/api/stripe/webhook/route.ts",
+          "line": 14,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/stripe/webhook",
+            "file": "app/api/stripe/webhook/route.ts",
+            "line": 14
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "events": [
+            {
+              "type": "customer.subscription.updated",
+              "line": 24,
+              "appCalls": [
+                {
+                  "name": "handleSubscriptionChange",
+                  "line": 27,
+                  "module": "@/lib/payments/stripe",
+                  "definedIn": {
+                    "file": "lib/payments/stripe.ts",
+                    "line": 117
+                  },
+                  "params": "subscription: Stripe.Subscription"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "customer.subscription.deleted",
+              "line": 25,
+              "appCalls": [
+                {
+                  "name": "handleSubscriptionChange",
+                  "line": 27,
+                  "module": "@/lib/payments/stripe",
+                  "definedIn": {
+                    "file": "lib/payments/stripe.ts",
+                    "line": 117
+                  },
+                  "params": "subscription: Stripe.Subscription"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "app/api/stripe/checkout/route.ts",
+          "line": 18,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(sessionId, { expand: ['customer', 'subscription'], })",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "app/api/stripe/checkout/route.ts",
+          "line": 36,
+          "path": "subscriptions.retrieve",
+          "snippet": "stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price.product'], })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "app/api/stripe/webhook/route.ts",
+          "line": 14,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent(payload, signature, webhookSecret)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "lib/db/seed.ts",
+          "line": 9,
+          "path": "products.create",
+          "snippet": "stripe.products.create({ name: 'Base', description: 'Base subscription plan', })",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createStripeProducts"
+        },
+        {
+          "file": "lib/db/seed.ts",
+          "line": 14,
+          "path": "prices.create",
+          "snippet": "stripe.prices.create({ product: baseProduct.id, unit_amount: 800, // $8 in cents currency: 'usd', recurring: { interval…",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createStripeProducts"
+        },
+        {
+          "file": "lib/db/seed.ts",
+          "line": 24,
+          "path": "products.create",
+          "snippet": "stripe.products.create({ name: 'Plus', description: 'Plus subscription plan', })",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createStripeProducts"
+        },
+        {
+          "file": "lib/db/seed.ts",
+          "line": 29,
+          "path": "prices.create",
+          "snippet": "stripe.prices.create({ product: plusProduct.id, unit_amount: 1200, // $12 in cents currency: 'usd', recurring: { interv…",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createStripeProducts"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 27,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create({ payment_method_types: ['card'], line_items: [ { price: priceId, quantity: 1 } ], mode…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "createCheckoutSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 55,
+          "path": "billingPortal.configurations.list",
+          "snippet": "stripe.billingPortal.configurations.list()",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "createCustomerPortalSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 60,
+          "path": "products.retrieve",
+          "snippet": "stripe.products.retrieve(team.stripeProductId)",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createCustomerPortalSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 65,
+          "path": "prices.list",
+          "snippet": "stripe.prices.list({ product: product.id, active: true })",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "createCustomerPortalSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 73,
+          "path": "billingPortal.configurations.create",
+          "snippet": "stripe.billingPortal.configurations.create({ business_profile: { headline: 'Manage your subscription' }, features: { su…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "createCustomerPortalSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 110,
+          "path": "billingPortal.sessions.create",
+          "snippet": "stripe.billingPortal.sessions.create({ customer: team.stripeCustomerId, return_url: `${process.env.BASE_URL}/dashboard`…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "createCustomerPortalSession"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 150,
+          "path": "prices.list",
+          "snippet": "stripe.prices.list({ expand: ['data.product'], active: true, type: 'recurring' })",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "getStripePrices"
+        },
+        {
+          "file": "lib/payments/stripe.ts",
+          "line": 168,
+          "path": "products.list",
+          "snippet": "stripe.products.list({ active: true, expand: ['data.default_price'] })",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "getStripeProducts"
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [
+        {
+          "entity": "teams",
+          "field": "stripeCustomerId",
+          "file": "lib/db/schema.ts",
+          "line": 27,
+          "source": "typescript"
+        },
+        {
+          "entity": "teams",
+          "field": "stripeSubscriptionId",
+          "file": "lib/db/schema.ts",
+          "line": 28,
+          "source": "typescript"
+        },
+        {
+          "entity": "teams",
+          "field": "stripeProductId",
+          "file": "lib/db/schema.ts",
+          "line": 29,
+          "source": "typescript"
+        }
+      ],
+      "envVars": [
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "lib/payments/stripe.ts",
+              "line": 10
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "app/api/stripe/webhook/route.ts",
+              "line": 5
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": ".env.example",
+          "keys": [
+            "POSTGRES_URL",
+            "STRIPE_SECRET_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "BASE_URL",
+            "AUTH_SECRET"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "SUBSCRIPTIONS_ONLY",
+          "severity": "blocker",
+          "message": "Only subscription billing found. Portage migrates one-time Checkout payments; subscriptions are on its roadmap.",
+          "where": [
+            {
+              "file": "lib/payments/stripe.ts",
+              "line": 27
+            },
+            {
+              "file": "app/api/stripe/checkout/route.ts",
+              "line": 36
+            },
+            {
+              "file": "lib/payments/stripe.ts",
+              "line": 55
+            },
+            {
+              "file": "lib/payments/stripe.ts",
+              "line": 73
+            },
+            {
+              "file": "lib/payments/stripe.ts",
+              "line": 110
+            }
+          ]
+        }
+      ],
+      "supported": false
+    }
+  ],
+  "otherLanguages": [],
+  "issues": [],
+  "supported": false,
+  "stats": {
+    "filesSeen": 55,
+    "filesParsed": 12,
+    "ms": 0
+  }
+}

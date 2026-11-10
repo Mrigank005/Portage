@@ -1,0 +1,13 @@
+{
+  "name": "portage",
+  "owner": { "name": "Mrigank Singh" },
+  "metadata": { "description": "Portage: add PayPal to Stripe apps, verified with a real sandbox payment." },
+  "plugins": [
+    {
+      "name": "portage",
+      "source": "./",
+      "description": "Adds PayPal to apps that take payments with Stripe, and proves the result with a real PayPal sandbox payment.",
+      "version": "0.1.0"
+    }
+  ]
+}

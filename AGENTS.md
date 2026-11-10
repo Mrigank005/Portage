@@ -19,6 +19,10 @@ Do not guess method names, model fields or enum values. If ContextMatic is unava
 
 Record the lookups behind each change in the pull request description under a "ContextMatic lookups" heading, listing the tool, the query, and what it confirmed.
 
+## Rule: the Stripe→PayPal map is data, and its SDK names are confirmed
+
+`packages/core/maps/stripe-paypal.json` holds every Stripe→PayPal translation; the planner contains no PayPal knowledge of its own. To name a new PayPal SDK method or model in the map, look it up through ContextMatic first, add it to `paypalSdk.methods` or `paypalSdk.models`, and record the lookup in `docs/contextmatic-lookups.md`. `packages/core/test/map.test.ts` fails on unconfirmed names.
+
 ## Other rules
 
 - Sandbox only. Never use live PayPal or Stripe keys.

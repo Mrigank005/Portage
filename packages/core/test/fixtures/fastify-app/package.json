@@ -1,0 +1,7 @@
+{
+  "name": "fastify-app",
+  "private": true,
+  "type": "module",
+  "description": "Fixture: Fastify, which Portage doesn't support yet.",
+  "dependencies": { "fastify": "^5.0.0", "stripe": "^23.0.0" }
+}

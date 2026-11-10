@@ -1,0 +1,22 @@
+{
+  "name": "@portage/cli",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "The portage command: scan and plan from the terminal (init and report arrive in later phases).",
+  "bin": {
+    "portage": "bin/portage.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@portage/core": "*",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.3"
+  }
+}

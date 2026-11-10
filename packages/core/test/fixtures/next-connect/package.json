@@ -1,0 +1,6 @@
+{
+  "name": "next-connect",
+  "private": true,
+  "description": "Fixture: a marketplace on Stripe Connect. Portage must stop.",
+  "dependencies": { "next": "^16.0.0", "react": "^19.0.0", "stripe": "^23.0.0" }
+}

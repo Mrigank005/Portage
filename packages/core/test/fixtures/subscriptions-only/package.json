@@ -1,0 +1,7 @@
+{
+  "name": "subscriptions-only",
+  "private": true,
+  "type": "module",
+  "description": "Fixture: subscription billing only. Not in Portage's MVP.",
+  "dependencies": { "express": "^5.0.0", "stripe": "^23.0.0" }
+}

@@ -1,0 +1,33 @@
+[
+  {
+    "name": "checkout-one-time-payments",
+    "repo": "https://github.com/stripe-samples/checkout-one-time-payments",
+    "why": "Stripe's own sample for one-time Checkout payments: an Express server with plain HTML, next to servers in six other languages.",
+    "commit": "c834ba3ae155bd77a6aeb5879b58edd6a944af00"
+  },
+  {
+    "name": "with-stripe-typescript",
+    "repo": "https://github.com/vercel/next.js",
+    "subdir": "examples/with-stripe-typescript",
+    "why": "Vercel's official Next.js App Router example: hosted and embedded Checkout, Elements, and a webhook route.",
+    "commit": "4d51724b7c1ce377bce7564e6a5237d2846d0867"
+  },
+  {
+    "name": "accept-a-payment",
+    "repo": "https://github.com/stripe-samples/accept-a-payment",
+    "why": "Stripe's sample with several apps in one repository: prebuilt Checkout and custom card forms, in many languages.",
+    "commit": "1a57c3b2f5aaf4ecd8de59ab0b1c3c5638827625"
+  },
+  {
+    "name": "nextjs-subscription-payments",
+    "repo": "https://github.com/vercel/nextjs-subscription-payments",
+    "why": "A popular Next.js SaaS starter. Its checkout (a server action) sells subscriptions and one-time prices, so Portage plans PayPal for the one-time payments and leaves subscriptions on Stripe.",
+    "commit": "bdd0813206e47e6b218d42f15a7976c8a0d3c3eb"
+  },
+  {
+    "name": "saas-starter",
+    "repo": "https://github.com/nextjs/saas-starter",
+    "why": "The Next.js SaaS starter (Drizzle, Postgres): subscriptions through Checkout and the customer portal.",
+    "commit": "6e33e58b1e553a41fe22e6b941a7229a002de361"
+  }
+]

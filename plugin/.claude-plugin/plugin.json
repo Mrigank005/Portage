@@ -1,0 +1,10 @@
+{
+  "name": "portage",
+  "version": "0.1.0",
+  "description": "Adds PayPal to apps that take payments with Stripe, and proves the result with a real PayPal sandbox payment.",
+  "author": { "name": "Mrigank Singh" },
+  "homepage": "https://github.com/Mrigank005/Portage",
+  "repository": "https://github.com/Mrigank005/Portage",
+  "license": "MIT",
+  "keywords": ["paypal", "stripe", "payments", "migration", "mcp", "apimatic"]
+}

@@ -6,6 +6,15 @@
       "headers": {
         "X-Apimatic-Mcp-Client": "ClaudeCode"
       }
+    },
+    "portage": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "--import",
+        "tsx",
+        "packages/mcp-server/src/index.ts"
+      ]
     }
   }
 }

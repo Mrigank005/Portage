@@ -1,0 +1,2846 @@
+{
+  "tool": "portage",
+  "kind": "scan",
+  "version": 1,
+  "repo": {
+    "path": "https://github.com/stripe-samples/accept-a-payment/tree/1a57c3b2f5aaf4ecd8de59ab0b1c3c5638827625",
+    "name": "accept-a-payment"
+  },
+  "languages": {
+    "Java or Kotlin": 14,
+    "JavaScript": 96,
+    "TypeScript": 49,
+    "C#": 8,
+    "Go": 4,
+    "PHP": 39,
+    "Python": 4,
+    "Ruby": 17
+  },
+  "apps": [
+    {
+      "root": "custom-payment-flow/client/react-cra",
+      "name": "accept-a-payment",
+      "language": "javascript",
+      "framework": {
+        "id": "none",
+        "label": "Node.js with no recognised web framework",
+        "supported": false
+      },
+      "srcDir": true,
+      "clients": [],
+      "checkouts": [],
+      "webhooks": [],
+      "refunds": [],
+      "calls": [],
+      "clientSide": [
+        {
+          "file": "custom-payment-flow/client/react-cra/src/ApplePay.jsx",
+          "line": 59,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Card.jsx",
+          "line": 43,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Card.jsx",
+          "line": 88,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Fpx.jsx",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Fpx.jsx",
+          "line": 23,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Fpx.jsx",
+          "line": 41,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/GooglePay.jsx",
+          "line": 59,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Ideal.jsx",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Ideal.jsx",
+          "line": 23,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/Ideal.jsx",
+          "line": 41,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/SepaDebit.jsx",
+          "line": 3,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/SepaDebit.jsx",
+          "line": 22,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/SepaDebit.jsx",
+          "line": 54,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "custom-payment-flow/client/react-cra/src/index.jsx",
+          "line": 5,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        }
+      ],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "FRAMEWORK_UNSUPPORTED",
+          "severity": "blocker",
+          "message": "Node.js with no recognised web framework isn't supported yet. Portage supports Next.js (App Router) and Express apps."
+        },
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "custom-payment-flow/client/react-cra/src/ApplePay.jsx",
+              "line": 59
+            },
+            {
+              "file": "custom-payment-flow/client/react-cra/src/Card.jsx",
+              "line": 43
+            },
+            {
+              "file": "custom-payment-flow/client/react-cra/src/Card.jsx",
+              "line": 88
+            },
+            {
+              "file": "custom-payment-flow/client/react-cra/src/Fpx.jsx",
+              "line": 23
+            },
+            {
+              "file": "custom-payment-flow/client/react-cra/src/Fpx.jsx",
+              "line": 41
+            },
+            {
+              "file": "custom-payment-flow/client/react-cra/src/GooglePay.jsx",
+              "line": 59
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "custom-payment-flow/client/react-native-expo",
+      "name": "react-native-expo",
+      "language": "javascript",
+      "framework": {
+        "id": "none",
+        "label": "Node.js with no recognised web framework",
+        "supported": false
+      },
+      "srcDir": false,
+      "clients": [],
+      "checkouts": [],
+      "webhooks": [],
+      "refunds": [],
+      "calls": [],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "FRAMEWORK_UNSUPPORTED",
+          "severity": "blocker",
+          "message": "Node.js with no recognised web framework isn't supported yet. Portage supports Next.js (App Router) and Express apps."
+        },
+        {
+          "code": "NO_ONE_TIME_CHECKOUT",
+          "severity": "blocker",
+          "message": "Found Stripe code, but no Checkout session in payment mode, which is what Portage migrates.",
+          "where": []
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "custom-payment-flow/server/nextjs",
+      "name": "stripe-sample-accept-a-payment-custom-payment-flow-nextjs",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 16.2.6 (App Router)",
+        "version": "16.2.6",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "custom-payment-flow/server/nextjs/lib/stripe.ts",
+          "line": 12,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripeInstance"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/webhook/route.ts",
+          "line": 16,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhook",
+            "file": "custom-payment-flow/server/nextjs/app/api/webhook/route.ts",
+            "line": 16
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 36,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 41,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+          "line": 11,
+          "path": "tax.calculations.create",
+          "snippet": "getStripe().tax.calculations.create({ currency, customer_details: { address: { line1: \"10709 Cleary Blvd\", city: \"Plant…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "tax",
+          "inTest": false,
+          "enclosing": "calculate_tax"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+          "line": 96,
+          "path": "customers.create",
+          "snippet": "getStripe() .customers.create()",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+          "line": 111,
+          "path": "paymentIntents.create",
+          "snippet": "getStripe().paymentIntents.create(params)",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/payment/next/route.ts",
+          "line": 16,
+          "path": "paymentIntents.retrieve",
+          "snippet": "getStripe().paymentIntents.retrieve(paymentIntentId, { expand: [\"payment_method\"], })",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "payment-read",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/api/webhook/route.ts",
+          "line": 16,
+          "path": "webhooks.constructEvent",
+          "snippet": "getStripe().webhooks.constructEvent( body, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        }
+      ],
+      "clientSide": [
+        {
+          "file": "custom-payment-flow/server/nextjs/app/card/CardForm.tsx",
+          "line": 57,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/card/CardForm.tsx",
+          "line": 98,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/card/page.tsx",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "custom-payment-flow/server/nextjs/app/success/page.tsx",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        }
+      ],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/config/route.ts",
+              "line": 5
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/lib/stripe.ts",
+              "line": 12
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/webhook/route.ts",
+              "line": 13
+            },
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/webhook/route.ts",
+              "line": 19
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": "custom-payment-flow/server/nextjs/.env.local.example",
+          "keys": [
+            "STRIPE_SECRET_KEY",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "DOMAIN"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/card/CardForm.tsx",
+              "line": 57
+            },
+            {
+              "file": "custom-payment-flow/server/nextjs/app/card/CardForm.tsx",
+              "line": 98
+            },
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 111
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`tax.calculations.create`: No automatic tax. The app computes tax and sends it as amount.breakdown.tax_total.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 11
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.create`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 96
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 111
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "custom-payment-flow/server/node",
+      "name": "stripe-sample-accept-a-payment",
+      "language": "javascript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.19.2",
+        "version": "4.19.2",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 14,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2023-10-16",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 195,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "custom-payment-flow/server/node/server.js",
+            "line": 186
+          },
+          "verify": "constructEvent",
+          "rawBody": "req.rawBody",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 213,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 218,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 54,
+          "path": "tax.calculations.create",
+          "snippet": "stripe.tax.calculations.create({ currency, customer_details: { address: { line1: \"10709 Cleary Blvd\", city: \"Plantation…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "tax",
+          "inTest": false,
+          "enclosing": "calculate_tax"
+        },
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 135,
+          "path": "customers.create",
+          "snippet": "stripe.customers.create()",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 151,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create(params)",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 168,
+          "path": "paymentIntents.retrieve",
+          "snippet": "stripe.paymentIntents.retrieve( req.query.payment_intent, { expand: ['payment_method'], } )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "payment-read",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node/server.js",
+          "line": 195,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 49
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 14
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 190
+            },
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 198
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 151
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`tax.calculations.create`: No automatic tax. The app computes tax and sends it as amount.breakdown.tax_total.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 54
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.create`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 135
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node/server.js",
+              "line": 151
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "custom-payment-flow/server/node-typescript",
+      "name": "stripe-sample-accept-a-payment",
+      "language": "typescript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.21.0",
+        "version": "4.21.0",
+        "supported": true
+      },
+      "stripeVersion": "20.1.2",
+      "srcDir": true,
+      "clients": [
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 13,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 193,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+            "line": 184
+          },
+          "verify": "constructEvent",
+          "rawBody": "express.raw()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 208,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 216,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 59,
+          "path": "tax.calculations.create",
+          "snippet": "stripe.tax.calculations.create({ currency, customer_details: { address: { line1: \"10709 Cleary Blvd\", city: \"Plantation…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "tax",
+          "inTest": false,
+          "enclosing": "calculate_tax"
+        },
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 134,
+          "path": "customers.create",
+          "snippet": "stripe.customers.create()",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 145,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create( params )",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 166,
+          "path": "paymentIntents.retrieve",
+          "snippet": "stripe.paymentIntents.retrieve( paymentIntent, { expand: ['payment_method'], } )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "payment-read",
+          "inTest": false
+        },
+        {
+          "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+          "line": 193,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.body, req.headers[\"stripe-signature\"], process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 53
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 13
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 196
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 145
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`tax.calculations.create`: No automatic tax. The app computes tax and sends it as amount.breakdown.tax_total.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 59
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.create`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 134
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "custom-payment-flow/server/node-typescript/src/server.ts",
+              "line": 145
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "elements-with-checkout-sessions/client/react-cra",
+      "name": "stripe-sample-elements-with-checkout-sessions-react",
+      "language": "javascript",
+      "framework": {
+        "id": "none",
+        "label": "Node.js with no recognised web framework",
+        "supported": false
+      },
+      "srcDir": true,
+      "clients": [],
+      "checkouts": [],
+      "webhooks": [],
+      "refunds": [],
+      "calls": [],
+      "clientSide": [
+        {
+          "file": "elements-with-checkout-sessions/client/react-cra/src/App.jsx",
+          "line": 2,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "elements-with-checkout-sessions/client/react-cra/src/CheckoutForm.jsx",
+          "line": 117,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        }
+      ],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "FRAMEWORK_UNSUPPORTED",
+          "severity": "blocker",
+          "message": "Node.js with no recognised web framework isn't supported yet. Portage supports Next.js (App Router) and Express apps."
+        },
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "elements-with-checkout-sessions/client/react-cra/src/CheckoutForm.jsx",
+              "line": 117
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "elements-with-checkout-sessions/server/node",
+      "name": "stripe-sample-elements-with-checkout-sessions",
+      "language": "javascript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.21.2",
+        "version": "4.21.2",
+        "supported": true
+      },
+      "stripeVersion": "22.0.2",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 18,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "names": [
+            "client"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 39,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/create-checkout-session",
+            "file": "elements-with-checkout-sessions/server/node/server.js",
+            "line": 37
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price_data",
+              "currency": "usd",
+              "unitAmount": "2000",
+              "productName": "T-shirt",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "ui_mode": "elements",
+            "mode": "payment",
+            "adaptive_pricing": "{ enabled: true }",
+            "customer_email": "test+location_FR@example.com",
+            "return_url": "${YOUR_DOMAIN}/complete?session_id={CHECKOUT_SESSION_ID}"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "usesSessionIdPlaceholder": false,
+          "response": "client-secret",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [],
+          "currencies": [
+            "usd"
+          ],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 101,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "elements-with-checkout-sessions/server/node/server.js",
+            "line": 93
+          },
+          "verify": "constructEvent",
+          "rawBody": "req.rawBody",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 114,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 39,
+          "path": "checkout.sessions.create",
+          "snippet": "client.checkout.sessions.create({ ui_mode: \"elements\", line_items: [ { price_data: { product_data: { name: \"T-shirt\", }…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false
+        },
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 75,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "client.checkout.sessions.retrieve(req.query.session_id, {expand: [\"payment_intent\"]})",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false
+        },
+        {
+          "file": "elements-with-checkout-sessions/server/node/server.js",
+          "line": 101,
+          "path": "webhooks.constructEvent",
+          "snippet": "client.webhooks.constructEvent( req.rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "elements-with-checkout-sessions/server/node/server.js",
+              "line": 30
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "elements-with-checkout-sessions/server/node/server.js",
+              "line": 18
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "elements-with-checkout-sessions/server/node/server.js",
+              "line": 97
+            },
+            {
+              "file": "elements-with-checkout-sessions/server/node/server.js",
+              "line": 104
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "CHECKOUT_CUSTOM_UI",
+          "severity": "needs-human",
+          "message": "Checkout runs with `ui_mode` custom/elements: the payment form is built from Stripe Elements in the app's own UI. PayPal buttons sit beside that form; find the client code that renders it.",
+          "where": [
+            {
+              "file": "elements-with-checkout-sessions/server/node/server.js",
+              "line": 39
+            }
+          ]
+        }
+      ],
+      "supported": true
+    },
+    {
+      "root": "payment-element/client/react-cra",
+      "name": "react-cra",
+      "language": "javascript",
+      "framework": {
+        "id": "none",
+        "label": "Node.js with no recognised web framework",
+        "supported": false
+      },
+      "srcDir": true,
+      "clients": [],
+      "checkouts": [],
+      "webhooks": [],
+      "refunds": [],
+      "calls": [],
+      "clientSide": [
+        {
+          "file": "payment-element/client/react-cra/src/App.jsx",
+          "line": 8,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        },
+        {
+          "file": "payment-element/client/react-cra/src/CheckoutForm.jsx",
+          "line": 25,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "payment-element/client/react-cra/src/CheckoutForm.jsx",
+          "line": 58,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        }
+      ],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "FRAMEWORK_UNSUPPORTED",
+          "severity": "blocker",
+          "message": "Node.js with no recognised web framework isn't supported yet. Portage supports Next.js (App Router) and Express apps."
+        },
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "payment-element/client/react-cra/src/CheckoutForm.jsx",
+              "line": 25
+            },
+            {
+              "file": "payment-element/client/react-cra/src/CheckoutForm.jsx",
+              "line": 58
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "payment-element/server/nextjs",
+      "name": "stripe-sample-accept-a-payment-payment-element-nextjs",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 16.2.6 (App Router)",
+        "version": "16.2.6",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "payment-element/server/nextjs/lib/stripe.ts",
+          "line": 12,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripeInstance"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "payment-element/server/nextjs/app/api/webhook/route.ts",
+          "line": 14,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhook",
+            "file": "payment-element/server/nextjs/app/api/webhook/route.ts",
+            "line": 14
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 32,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 36,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "payment-element/server/nextjs/app/api/create-payment-intent/route.ts",
+          "line": 8,
+          "path": "paymentIntents.create",
+          "snippet": "getStripe().paymentIntents.create({ currency: \"usd\", amount: orderAmount, automatic_payment_methods: { enabled: true },…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "payment-element/server/nextjs/app/api/webhook/route.ts",
+          "line": 14,
+          "path": "webhooks.constructEvent",
+          "snippet": "getStripe().webhooks.constructEvent( body, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "payment-element/server/nextjs/app/success/page.tsx",
+          "line": 26,
+          "path": "paymentIntents.retrieve",
+          "snippet": "getStripe().paymentIntents.retrieve(payment_intent)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "payment-read",
+          "inTest": false,
+          "enclosing": "SuccessPage"
+        }
+      ],
+      "clientSide": [
+        {
+          "file": "payment-element/server/nextjs/components/CheckoutForm.tsx",
+          "line": 27,
+          "kind": "elements",
+          "detail": "confirms a payment from a custom card form"
+        },
+        {
+          "file": "payment-element/server/nextjs/components/CheckoutForm.tsx",
+          "line": 47,
+          "kind": "elements",
+          "detail": "renders a Stripe Elements card form"
+        },
+        {
+          "file": "payment-element/server/nextjs/components/StripeProvider.tsx",
+          "line": 4,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        }
+      ],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/nextjs/app/api/config/route.ts",
+              "line": 5
+            },
+            {
+              "file": "payment-element/server/nextjs/components/StripeProvider.tsx",
+              "line": 12
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/nextjs/lib/stripe.ts",
+              "line": 12
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "payment-element/server/nextjs/app/api/webhook/route.ts",
+              "line": 12
+            },
+            {
+              "file": "payment-element/server/nextjs/app/api/webhook/route.ts",
+              "line": 17
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": "payment-element/server/nextjs/.env.local.example",
+          "keys": [
+            "STRIPE_SECRET_KEY",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "STRIPE_WEBHOOK_SECRET"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "payment-element/server/nextjs/components/CheckoutForm.tsx",
+              "line": 27
+            },
+            {
+              "file": "payment-element/server/nextjs/components/CheckoutForm.tsx",
+              "line": 47
+            },
+            {
+              "file": "payment-element/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 8
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "payment-element/server/nextjs/app/api/create-payment-intent/route.ts",
+              "line": 8
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "payment-element/server/node",
+      "name": "stripe-sample-accept-a-payment",
+      "language": "javascript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.22.1",
+        "version": "4.22.1",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 13,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2023-10-16",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 125,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "payment-element/server/node/server.js",
+            "line": 116
+          },
+          "verify": "constructEvent",
+          "rawBody": "req.rawBody",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 143,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 148,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 47,
+          "path": "tax.calculations.create",
+          "snippet": "stripe.tax.calculations.create({ currency, customer_details: { address: { line1: \"10709 Cleary Blvd\", city: \"Plantation…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "tax",
+          "inTest": false,
+          "enclosing": "calculate_tax"
+        },
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 85,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create({ currency: 'usd', amount: taxCalculation.amount_total, automatic_payment_methods: { enabl…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 93,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create({ currency: 'usd', amount: orderAmount, automatic_payment_methods: { enabled: true } })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "payment-element/server/node/server.js",
+          "line": 125,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 42
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 13
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 120
+            },
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 128
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 85
+            },
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 93
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`tax.calculations.create`: No automatic tax. The app computes tax and sends it as amount.breakdown.tax_total.",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 47
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 85
+            },
+            {
+              "file": "payment-element/server/node/server.js",
+              "line": 93
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "payment-element/server/node-typescript",
+      "name": "stripe-sample-accept-a-payment",
+      "language": "typescript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.21.0",
+        "version": "4.21.0",
+        "supported": true
+      },
+      "stripeVersion": "20.1.2",
+      "srcDir": true,
+      "clients": [
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 16,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [],
+      "webhooks": [
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 130,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "payment-element/server/node-typescript/src/server.ts",
+            "line": 122
+          },
+          "verify": "constructEvent",
+          "rawBody": "express.raw()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "payment_intent.succeeded",
+              "line": 145,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "payment_intent.payment_failed",
+              "line": 153,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 52,
+          "path": "tax.calculations.create",
+          "snippet": "stripe.tax.calculations.create({ currency, customer_details: { address: { line1: \"10709 Cleary Blvd\", city: \"Plantation…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "tax",
+          "inTest": false,
+          "enclosing": "calculate_tax"
+        },
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 87,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create({ currency: 'usd', amount: taxCalculation.amount_total, automatic_payment_methods: { enabl…",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 95,
+          "path": "paymentIntents.create",
+          "snippet": "stripe.paymentIntents.create({ currency: 'usd', amount: orderAmount, automatic_payment_methods: { enabled: true } })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "custom-flow",
+          "inTest": false
+        },
+        {
+          "file": "payment-element/server/node-typescript/src/server.ts",
+          "line": 130,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.body, req.headers[\"stripe-signature\"], process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 47
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 16
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 133
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "ELEMENTS_ONLY",
+          "severity": "blocker",
+          "message": "Payments go through a custom card form (Stripe Elements and PaymentIntents), not Stripe Checkout. Custom card forms are out of Portage's scope.",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 87
+            },
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 95
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`tax.calculations.create`: No automatic tax. The app computes tax and sends it as amount.breakdown.tax_total.",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 52
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`paymentIntents.create`: Orders v2 with PayPal card fields (custom card forms are out of Portage's scope).",
+          "where": [
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 87
+            },
+            {
+              "file": "payment-element/server/node-typescript/src/server.ts",
+              "line": 95
+            }
+          ]
+        }
+      ],
+      "supported": false
+    },
+    {
+      "root": "prebuilt-checkout-page/server/nextjs",
+      "name": "stripe-sample-accept-a-payment-prebuilt-checkout-page-nextjs",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 16.2.11 (App Router)",
+        "version": "16.2.11",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/lib/stripe.ts",
+          "line": 12,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripeInstance"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/api/create-checkout-session/route.ts",
+          "line": 8,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/create-checkout-session",
+            "file": "prebuilt-checkout-page/server/nextjs/app/api/create-checkout-session/route.ts",
+            "line": 8
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "process.env.PRICE",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "mode": "payment",
+            "success_url": "${domainURL}/success?session_id={CHECKOUT_SESSION_ID}",
+            "cancel_url": "${domainURL}/canceled"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "${domainURL}/success?session_id={CHECKOUT_SESSION_ID}",
+          "cancelUrl": "${domainURL}/canceled",
+          "usesSessionIdPlaceholder": true,
+          "response": "redirect",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [
+            {
+              "name": "getStripe",
+              "line": 8,
+              "module": "@/lib/stripe",
+              "definedIn": {
+                "file": "prebuilt-checkout-page/server/nextjs/lib/stripe.ts",
+                "line": 5
+              },
+              "params": ""
+            }
+          ],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/api/webhook/route.ts",
+          "line": 14,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhook",
+            "file": "prebuilt-checkout-page/server/nextjs/app/api/webhook/route.ts",
+            "line": 14
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 32,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/api/checkout-session/route.ts",
+          "line": 15,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "getStripe().checkout.sessions.retrieve(sessionId)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/api/create-checkout-session/route.ts",
+          "line": 8,
+          "path": "checkout.sessions.create",
+          "snippet": "getStripe().checkout.sessions.create({ mode: \"payment\", line_items: [ { price: process.env.PRICE!, quantity: 1, }, ], s…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/api/webhook/route.ts",
+          "line": 14,
+          "path": "webhooks.constructEvent",
+          "snippet": "getStripe().webhooks.constructEvent( body, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/page.tsx",
+          "line": 7,
+          "path": "prices.retrieve",
+          "snippet": "getStripe().prices.retrieve(process.env.PRICE!)",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "Home"
+        },
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/success/page.tsx",
+          "line": 26,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "getStripe().checkout.sessions.retrieve(session_id)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "SuccessPage"
+        }
+      ],
+      "clientSide": [],
+      "triggers": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/app/CheckoutButton.tsx",
+          "line": 13,
+          "target": "POST /api/create-checkout-session",
+          "snippet": "form.action = \"/api/create-checkout-session\";"
+        }
+      ],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "prebuilt-checkout-page/server/nextjs/lib/stripe.ts",
+              "line": 12
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "prebuilt-checkout-page/server/nextjs/app/api/webhook/route.ts",
+              "line": 12
+            },
+            {
+              "file": "prebuilt-checkout-page/server/nextjs/app/api/webhook/route.ts",
+              "line": 17
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": "prebuilt-checkout-page/server/nextjs/.env.local.example",
+          "keys": [
+            "STRIPE_SECRET_KEY",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "PRICE",
+            "DOMAIN"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [],
+      "supported": true
+    },
+    {
+      "root": "prebuilt-checkout-page/server/node",
+      "name": "accept-a-payment-checkout",
+      "language": "javascript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.21.0",
+        "version": "4.21.0",
+        "supported": true
+      },
+      "stripeVersion": "20.3.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 15,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2023-10-16",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 56,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/create-checkout-session",
+            "file": "prebuilt-checkout-page/server/node/server.js",
+            "line": 50
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "process.env.PRICE",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "mode": "payment",
+            "success_url": "${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}",
+            "cancel_url": "${domainURL}/canceled.html"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}",
+          "cancelUrl": "${domainURL}/canceled.html",
+          "usesSessionIdPlaceholder": true,
+          "response": "redirect",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 81,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "prebuilt-checkout-page/server/node/server.js",
+            "line": 72
+          },
+          "verify": "constructEvent",
+          "rawBody": "req.rawBody",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 96,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 46,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(sessionId)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false
+        },
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 56,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create({ mode: 'payment', line_items: [{ price: process.env.PRICE, quantity: 1, }], // ?sessio…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false
+        },
+        {
+          "file": "prebuilt-checkout-page/server/node/server.js",
+          "line": 81,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "prebuilt-checkout-page/server/node/server.js",
+              "line": 15
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "prebuilt-checkout-page/server/node/server.js",
+              "line": 76
+            },
+            {
+              "file": "prebuilt-checkout-page/server/node/server.js",
+              "line": 84
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [],
+      "supported": true
+    }
+  ],
+  "otherLanguages": [
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 7,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 8,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 9,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 10,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 11,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 12,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+      "line": 13,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AlipayActivity.kt",
+      "line": 10,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AlipayActivity.kt",
+      "line": 11,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AlipayActivity.kt",
+      "line": 12,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/CardActivity.kt",
+      "line": 7,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/CardActivity.kt",
+      "line": 8,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/CardActivity.kt",
+      "line": 9,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/CardActivity.kt",
+      "line": 10,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 8,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 9,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 10,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 11,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 12,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 13,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/KlarnaActivity.kt",
+      "line": 14,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/LauncherActivity.kt",
+      "line": 16,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "C#",
+      "file": "custom-payment-flow/server/dotnet/Program.cs",
+      "line": 3,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "custom-payment-flow/server/dotnet/Program.cs",
+      "line": 161,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "custom-payment-flow/server/go/server.go",
+      "line": 14,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "custom-payment-flow/server/go/server.go",
+      "line": 15,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "custom-payment-flow/server/go/server.go",
+      "line": 16,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "custom-payment-flow/server/go/server.go",
+      "line": 170,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "custom-payment-flow/server/go/server.go",
+      "line": 173,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 14,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 15,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 16,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 17,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 18,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 19,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 20,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 21,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "custom-payment-flow/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 174,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "PHP",
+      "file": "custom-payment-flow/server/php/public/shared.php",
+      "line": 63,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "custom-payment-flow/server/php/public/webhook.php",
+      "line": 12,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Python",
+      "file": "custom-payment-flow/server/python/server.py",
+      "line": 2,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "custom-payment-flow/server/python/server.py",
+      "line": 148,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "custom-payment-flow/server/ruby/config_helper.rb",
+      "line": 5,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "custom-payment-flow/server/ruby/server.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "custom-payment-flow/server/ruby/server.rb",
+      "line": 124,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "C#",
+      "file": "elements-with-checkout-sessions/server/dotnet/Server.cs",
+      "line": 12,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "elements-with-checkout-sessions/server/dotnet/Server.cs",
+      "line": 13,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "elements-with-checkout-sessions/server/dotnet/Server.cs",
+      "line": 191,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "elements-with-checkout-sessions/server/go/server.go",
+      "line": 14,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 16,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 17,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 18,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 19,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 20,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 21,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 22,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 23,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "elements-with-checkout-sessions/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 144,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "PHP",
+      "file": "elements-with-checkout-sessions/server/php/public/create-checkout-session.php",
+      "line": 11,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "elements-with-checkout-sessions/server/php/public/create-checkout-session.php",
+      "line": 20,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "PHP",
+      "file": "elements-with-checkout-sessions/server/php/public/session-status.php",
+      "line": 11,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "elements-with-checkout-sessions/server/php/public/webhook.php",
+      "line": 11,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "elements-with-checkout-sessions/server/php/public/webhook.php",
+      "line": 21,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Python",
+      "file": "elements-with-checkout-sessions/server/python/server.py",
+      "line": 14,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "elements-with-checkout-sessions/server/python/server.py",
+      "line": 49,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Python",
+      "file": "elements-with-checkout-sessions/server/python/server.py",
+      "line": 105,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "elements-with-checkout-sessions/server/ruby/server.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "elements-with-checkout-sessions/server/ruby/server.rb",
+      "line": 91,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "C#",
+      "file": "payment-element/server/dotnet/Program.cs",
+      "line": 4,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "payment-element/server/dotnet/Program.cs",
+      "line": 135,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "payment-element/server/go/server.go",
+      "line": 14,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "payment-element/server/go/server.go",
+      "line": 15,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "payment-element/server/go/server.go",
+      "line": 16,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "payment-element/server/go/server.go",
+      "line": 115,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "payment-element/server/go/server.go",
+      "line": 118,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 14,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 15,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 16,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 17,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 18,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 19,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 20,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 21,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "payment-element/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 119,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "PHP",
+      "file": "payment-element/server/php/public/shared.php",
+      "line": 63,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "payment-element/server/php/public/webhook.php",
+      "line": 12,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Python",
+      "file": "payment-element/server/python/server.py",
+      "line": 2,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "payment-element/server/python/server.py",
+      "line": 9,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "payment-element/server/python/server.py",
+      "line": 117,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "payment-element/server/ruby/config_helper.rb",
+      "line": 5,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "payment-element/server/ruby/server.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "payment-element/server/ruby/server.rb",
+      "line": 84,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 3,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 4,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 61,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 93,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 105,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "C#",
+      "file": "prebuilt-checkout-page/server/dotnet/Program.cs",
+      "line": 130,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 14,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 15,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 16,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 84,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 100,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 121,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "prebuilt-checkout-page/server/go/server.go",
+      "line": 124,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 12,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 13,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 14,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 15,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 16,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 17,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 79,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "prebuilt-checkout-page/server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 93,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "PHP",
+      "file": "prebuilt-checkout-page/server/php/public/create-checkout-session.php",
+      "line": 12,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "PHP",
+      "file": "prebuilt-checkout-page/server/php/public/shared.php",
+      "line": 91,
+      "what": "creates a Stripe client"
+    },
+    {
+      "language": "PHP",
+      "file": "prebuilt-checkout-page/server/php/public/webhook.php",
+      "line": 20,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Python",
+      "file": "prebuilt-checkout-page/server/python/server.py",
+      "line": 9,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "prebuilt-checkout-page/server/python/server.py",
+      "line": 67,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Python",
+      "file": "prebuilt-checkout-page/server/python/server.py",
+      "line": 93,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "prebuilt-checkout-page/server/ruby/config_helper.rb",
+      "line": 5,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "prebuilt-checkout-page/server/ruby/server.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "prebuilt-checkout-page/server/ruby/server.rb",
+      "line": 50,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Ruby",
+      "file": "prebuilt-checkout-page/server/ruby/server.rb",
+      "line": 78,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "spec/spec_helper.rb",
+      "line": 4,
+      "what": "requires the stripe gem"
+    }
+  ],
+  "issues": [
+    {
+      "code": "OTHER_LANGUAGES",
+      "severity": "info",
+      "message": "Stripe is also used from Java or Kotlin and C# and Go and PHP and Python and Ruby. Portage only changes the Node.js apps and leaves that code alone.",
+      "where": [
+        {
+          "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+          "line": 7
+        },
+        {
+          "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+          "line": 8
+        },
+        {
+          "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+          "line": 9
+        },
+        {
+          "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+          "line": 10
+        },
+        {
+          "file": "custom-payment-flow/client/android-kotlin/app/src/main/java/com/example/app/AfterpayClearpayActivity.kt",
+          "line": 11
+        }
+      ]
+    }
+  ],
+  "supported": true,
+  "stats": {
+    "filesSeen": 719,
+    "filesParsed": 108,
+    "ms": 0
+  }
+}

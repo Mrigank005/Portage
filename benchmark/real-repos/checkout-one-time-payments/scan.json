@@ -1,0 +1,633 @@
+{
+  "tool": "portage",
+  "kind": "scan",
+  "version": 1,
+  "repo": {
+    "path": "https://github.com/stripe-samples/checkout-one-time-payments/tree/c834ba3ae155bd77a6aeb5879b58edd6a944af00",
+    "name": "checkout-one-time-payments"
+  },
+  "languages": {
+    "JavaScript": 9,
+    "C#": 3,
+    "Go": 1,
+    "Java or Kotlin": 1,
+    "TypeScript": 11,
+    "PHP": 4,
+    "Python": 1,
+    "Ruby": 5
+  },
+  "apps": [
+    {
+      "root": "server/nextjs",
+      "name": "stripe-sample-checkout-one-time-payments-nextjs",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 16.1.5 (App Router)",
+        "version": "16.1.5",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "server/nextjs/lib/stripe.ts",
+          "line": 8,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "apiVersion": "2025-12-15.clover",
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "server/nextjs/app/api/create-checkout-session/route.ts",
+          "line": 11,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/create-checkout-session",
+            "file": "server/nextjs/app/api/create-checkout-session/route.ts",
+            "line": 11
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "process.env.PRICE",
+              "quantity": "quantity"
+            }
+          ],
+          "params": {
+            "mode": "payment",
+            "success_url": "${domainURL}/success?session_id={CHECKOUT_SESSION_ID}",
+            "cancel_url": "${domainURL}/canceled"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "${domainURL}/success?session_id={CHECKOUT_SESSION_ID}",
+          "cancelUrl": "${domainURL}/canceled",
+          "usesSessionIdPlaceholder": true,
+          "response": "redirect",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "server/nextjs/app/api/webhook/route.ts",
+          "line": 13,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhook",
+            "file": "server/nextjs/app/api/webhook/route.ts",
+            "line": 13
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 29,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "server/nextjs/app/api/checkout-session/route.ts",
+          "line": 15,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(sessionId)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "server/nextjs/app/api/config/route.ts",
+          "line": 6,
+          "path": "prices.retrieve",
+          "snippet": "stripe.prices.retrieve(process.env.PRICE!)",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false,
+          "enclosing": "GET"
+        },
+        {
+          "file": "server/nextjs/app/api/create-checkout-session/route.ts",
+          "line": 11,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create({ mode: \"payment\", line_items: [ { price: process.env.PRICE!, quantity: quantity, }, ],…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "server/nextjs/app/api/webhook/route.ts",
+          "line": 13,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( body, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        }
+      ],
+      "clientSide": [],
+      "triggers": [
+        {
+          "file": "server/nextjs/app/page.tsx",
+          "line": 42,
+          "target": "POST /api/create-checkout-session",
+          "snippet": "<form action=\"/api/create-checkout-session\" method=\"POST\">"
+        }
+      ],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "server/nextjs/app/api/config/route.ts",
+              "line": 9
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "server/nextjs/lib/stripe.ts",
+              "line": 8
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "server/nextjs/app/api/webhook/route.ts",
+              "line": 12
+            },
+            {
+              "file": "server/nextjs/app/api/webhook/route.ts",
+              "line": 16
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": "server/nextjs/.env.local.example",
+          "keys": [
+            "STRIPE_SECRET_KEY",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "PRICE",
+            "STRIPE_WEBHOOK_SECRET"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [],
+      "supported": true
+    },
+    {
+      "root": "server/node",
+      "name": "checkout-one-time-payments",
+      "language": "javascript",
+      "framework": {
+        "id": "express",
+        "label": "Express 4.17.1",
+        "version": "4.17.1",
+        "supported": true
+      },
+      "stripeVersion": "20.2.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "server/node/server.js",
+          "line": 15,
+          "keyEnv": "STRIPE_SECRET_KEY",
+          "customHost": false,
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "server/node/server.js",
+          "line": 72,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/create-checkout-session",
+            "file": "server/node/server.js",
+            "line": 60
+          },
+          "modes": [
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "process.env.PRICE",
+              "quantity": "quantity"
+            }
+          ],
+          "params": {
+            "mode": "payment",
+            "success_url": "${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}",
+          "usesSessionIdPlaceholder": true,
+          "response": "redirect",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [],
+          "appCalls": [],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "server/node/server.js",
+          "line": 99,
+          "route": {
+            "kind": "express",
+            "method": "POST",
+            "path": "/webhook",
+            "file": "server/node/server.js",
+            "line": 89
+          },
+          "verify": "constructEvent",
+          "rawBody": "req.rawBody",
+          "secretEnv": "STRIPE_WEBHOOK_SECRET",
+          "events": [
+            {
+              "type": "checkout.session.completed",
+              "line": 118,
+              "appCalls": [],
+              "stripeCalls": [],
+              "fieldsRead": []
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "server/node/server.js",
+          "line": 44,
+          "path": "prices.retrieve",
+          "snippet": "stripe.prices.retrieve(process.env.PRICE)",
+          "confidence": "high",
+          "status": "catalog",
+          "role": "catalog",
+          "inTest": false
+        },
+        {
+          "file": "server/node/server.js",
+          "line": 56,
+          "path": "checkout.sessions.retrieve",
+          "snippet": "stripe.checkout.sessions.retrieve(sessionId)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout-read",
+          "inTest": false
+        },
+        {
+          "file": "server/node/server.js",
+          "line": 72,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create({ mode: 'payment', line_items: [ { price: process.env.PRICE, quantity: quantity }, ], /…",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false
+        },
+        {
+          "file": "server/node/server.js",
+          "line": 99,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent( req.rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET )",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false
+        }
+      ],
+      "clientSide": [],
+      "triggers": [],
+      "dataModel": [],
+      "envVars": [
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "server/node/server.js",
+              "line": 47
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "server/node/server.js",
+              "line": 15
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "server/node/server.js",
+              "line": 93
+            },
+            {
+              "file": "server/node/server.js",
+              "line": 102
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [],
+      "hardcodedIds": [],
+      "issues": [],
+      "supported": true
+    }
+  ],
+  "otherLanguages": [
+    {
+      "language": "C#",
+      "file": "server/dotnet/Program.cs",
+      "line": 2,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "server/dotnet/Program.cs",
+      "line": 3,
+      "what": "uses Stripe.net"
+    },
+    {
+      "language": "C#",
+      "file": "server/dotnet/Program.cs",
+      "line": 63,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "C#",
+      "file": "server/dotnet/Program.cs",
+      "line": 85,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "C#",
+      "file": "server/dotnet/Program.cs",
+      "line": 96,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 15,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 16,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 17,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 18,
+      "what": "imports stripe-go"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 111,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 126,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 147,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Go",
+      "file": "server/go/server.go",
+      "line": 150,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 24,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 25,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 26,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 27,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 28,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 29,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 30,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 31,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 32,
+      "what": "imports stripe-java"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 108,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Java or Kotlin",
+      "file": "server/java/src/main/java/com/stripe/sample/Server.java",
+      "line": 122,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "PHP",
+      "file": "server/php/public/create-checkout-session.php",
+      "line": 45,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "PHP",
+      "file": "server/php/public/webhook.php",
+      "line": 9,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Python",
+      "file": "server/python/server.py",
+      "line": 1,
+      "what": "imports stripe-python"
+    },
+    {
+      "language": "Python",
+      "file": "server/python/server.py",
+      "line": 74,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Python",
+      "file": "server/python/server.py",
+      "line": 99,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "server/ruby/server.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "server/ruby/server.rb",
+      "line": 68,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Ruby",
+      "file": "server/ruby/server.rb",
+      "line": 92,
+      "what": "verifies Stripe webhooks"
+    },
+    {
+      "language": "Ruby",
+      "file": "spec/client_and_server_spec.rb",
+      "line": 1,
+      "what": "requires the stripe gem"
+    },
+    {
+      "language": "Ruby",
+      "file": "spec/client_and_server_spec.rb",
+      "line": 48,
+      "what": "creates a Checkout session"
+    },
+    {
+      "language": "Ruby",
+      "file": "spec/spec_helper.rb",
+      "line": 3,
+      "what": "requires the stripe gem"
+    }
+  ],
+  "issues": [
+    {
+      "code": "OTHER_LANGUAGES",
+      "severity": "info",
+      "message": "Stripe is also used from C# and Go and Java or Kotlin and PHP and Python and Ruby. Portage only changes the Node.js apps and leaves that code alone.",
+      "where": [
+        {
+          "file": "server/dotnet/Program.cs",
+          "line": 2
+        },
+        {
+          "file": "server/dotnet/Program.cs",
+          "line": 3
+        },
+        {
+          "file": "server/dotnet/Program.cs",
+          "line": 63
+        },
+        {
+          "file": "server/dotnet/Program.cs",
+          "line": 85
+        },
+        {
+          "file": "server/dotnet/Program.cs",
+          "line": 96
+        }
+      ]
+    }
+  ],
+  "supported": true,
+  "stats": {
+    "filesSeen": 100,
+    "filesParsed": 11,
+    "ms": 0
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "@acme/web",
+  "private": true,
+  "dependencies": { "next": "^16.0.0", "react": "^19.0.0", "stripe": "^23.0.0", "drizzle-orm": "^0.40.0" }
+}

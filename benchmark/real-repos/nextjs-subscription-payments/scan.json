@@ -1,0 +1,642 @@
+{
+  "tool": "portage",
+  "kind": "scan",
+  "version": 1,
+  "repo": {
+    "path": "https://github.com/vercel/nextjs-subscription-payments/tree/bdd0813206e47e6b218d42f15a7976c8a0d3c3eb",
+    "name": "nextjs-subscription-payments"
+  },
+  "languages": {
+    "TypeScript": 54,
+    "JavaScript": 2
+  },
+  "apps": [
+    {
+      "root": ".",
+      "name": "nextjs-subscription-payments",
+      "language": "typescript",
+      "framework": {
+        "id": "next",
+        "label": "Next.js 14.2.3 (App Router)",
+        "version": "14.2.3",
+        "router": "app",
+        "supported": true
+      },
+      "stripeVersion": "14.25.0",
+      "srcDir": false,
+      "clients": [
+        {
+          "file": "utils/stripe/config.ts",
+          "line": 3,
+          "keyEnv": "STRIPE_SECRET_KEY_LIVE",
+          "customHost": false,
+          "names": [
+            "stripe"
+          ]
+        }
+      ],
+      "checkouts": [
+        {
+          "file": "utils/stripe/server.ts",
+          "line": 89,
+          "route": {
+            "kind": "next-action",
+            "method": "ACTION",
+            "path": "checkoutWithStripe",
+            "file": "utils/stripe/server.ts",
+            "line": 89
+          },
+          "modes": [
+            "subscription",
+            "payment"
+          ],
+          "lineItems": [
+            {
+              "kind": "price",
+              "expr": "price.id",
+              "quantity": "1"
+            }
+          ],
+          "params": {
+            "allow_promotion_codes": "true",
+            "billing_address_collection": "required",
+            "customer": "customer",
+            "customer_update": "{ address: 'auto' }",
+            "cancel_url": "getURL()",
+            "success_url": "getURL(redirectPath)",
+            "mode": "payment",
+            "subscription_data": "{ trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days) }",
+            "subscription_data.trial_end": "calculateTrialEndUnixTimestamp(price.trial_period_days)"
+          },
+          "idempotencyKey": false,
+          "connectOption": false,
+          "successUrl": "getURL(redirectPath)",
+          "cancelUrl": "getURL()",
+          "usesSessionIdPlaceholder": false,
+          "response": "unknown",
+          "sessionVar": "session",
+          "sessionIdStoredAs": [
+            {
+              "call": "object",
+              "field": "sessionId",
+              "line": 97
+            }
+          ],
+          "appCalls": [
+            {
+              "name": "createClient",
+              "line": 27,
+              "module": "@/utils/supabase/server",
+              "definedIn": {
+                "file": "utils/supabase/server.ts",
+                "line": 7
+              },
+              "params": ""
+            },
+            {
+              "name": "createOrRetrieveCustomer",
+              "line": 41,
+              "module": "@/utils/supabase/admin",
+              "definedIn": {
+                "file": "utils/supabase/admin.ts",
+                "line": 114
+              },
+              "params": "{ email, uuid }: { email: string; uuid: string; }"
+            },
+            {
+              "name": "getURL",
+              "line": 63,
+              "module": "@/utils/helpers",
+              "definedIn": {
+                "file": "utils/helpers.ts",
+                "line": 5
+              },
+              "params": "path: string = ''"
+            },
+            {
+              "name": "calculateTrialEndUnixTimestamp",
+              "line": 69,
+              "module": "@/utils/helpers",
+              "definedIn": {
+                "file": "utils/helpers.ts",
+                "line": 52
+              },
+              "params": "trialPeriodDays: number | null | undefined"
+            },
+            {
+              "name": "getErrorRedirect",
+              "line": 104,
+              "module": "@/utils/helpers",
+              "definedIn": {
+                "file": "utils/helpers.ts",
+                "line": 119
+              },
+              "params": "path: string, errorName: string, errorDescription: string = '', disableButton: boolean = false, arbitraryParams: string = ''"
+            }
+          ],
+          "currencies": [],
+          "inTest": false
+        }
+      ],
+      "webhooks": [
+        {
+          "file": "app/api/webhooks/route.ts",
+          "line": 33,
+          "route": {
+            "kind": "next-app",
+            "method": "POST",
+            "path": "/api/webhooks",
+            "file": "app/api/webhooks/route.ts",
+            "line": 33
+          },
+          "verify": "constructEvent",
+          "rawBody": "request.text()",
+          "events": [
+            {
+              "type": "product.created",
+              "line": 43,
+              "appCalls": [
+                {
+                  "name": "upsertProductRecord",
+                  "line": 45,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 20
+                  },
+                  "params": "product: Stripe.Product"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "product.updated",
+              "line": 44,
+              "appCalls": [
+                {
+                  "name": "upsertProductRecord",
+                  "line": 45,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 20
+                  },
+                  "params": "product: Stripe.Product"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "price.created",
+              "line": 47,
+              "appCalls": [
+                {
+                  "name": "upsertPriceRecord",
+                  "line": 49,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 38
+                  },
+                  "params": "price: Stripe.Price, retryCount = 0, maxRetries = 3"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "price.updated",
+              "line": 48,
+              "appCalls": [
+                {
+                  "name": "upsertPriceRecord",
+                  "line": 49,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 38
+                  },
+                  "params": "price: Stripe.Price, retryCount = 0, maxRetries = 3"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "price.deleted",
+              "line": 51,
+              "appCalls": [
+                {
+                  "name": "deletePriceRecord",
+                  "line": 52,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 86
+                  },
+                  "params": "price: Stripe.Price"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "product.deleted",
+              "line": 54,
+              "appCalls": [
+                {
+                  "name": "deleteProductRecord",
+                  "line": 55,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 76
+                  },
+                  "params": "product: Stripe.Product"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": []
+            },
+            {
+              "type": "customer.subscription.created",
+              "line": 57,
+              "appCalls": [
+                {
+                  "name": "manageSubscriptionStatusChange",
+                  "line": 61,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 211
+                  },
+                  "params": "subscriptionId: string, customerId: string, createAction = false"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": [
+                "customer",
+                "id"
+              ]
+            },
+            {
+              "type": "customer.subscription.updated",
+              "line": 58,
+              "appCalls": [
+                {
+                  "name": "manageSubscriptionStatusChange",
+                  "line": 61,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 211
+                  },
+                  "params": "subscriptionId: string, customerId: string, createAction = false"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": [
+                "customer",
+                "id"
+              ]
+            },
+            {
+              "type": "customer.subscription.deleted",
+              "line": 59,
+              "appCalls": [
+                {
+                  "name": "manageSubscriptionStatusChange",
+                  "line": 61,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 211
+                  },
+                  "params": "subscriptionId: string, customerId: string, createAction = false"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": [
+                "customer",
+                "id"
+              ]
+            },
+            {
+              "type": "checkout.session.completed",
+              "line": 67,
+              "appCalls": [
+                {
+                  "name": "manageSubscriptionStatusChange",
+                  "line": 71,
+                  "module": "@/utils/supabase/admin",
+                  "definedIn": {
+                    "file": "utils/supabase/admin.ts",
+                    "line": 211
+                  },
+                  "params": "subscriptionId: string, customerId: string, createAction = false"
+                }
+              ],
+              "stripeCalls": [],
+              "fieldsRead": [
+                "customer",
+                "mode",
+                "subscription"
+              ]
+            }
+          ],
+          "inTest": false
+        }
+      ],
+      "refunds": [],
+      "calls": [
+        {
+          "file": "app/api/webhooks/route.ts",
+          "line": 33,
+          "path": "webhooks.constructEvent",
+          "snippet": "stripe.webhooks.constructEvent(body, sig, webhookSecret)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "webhook",
+          "inTest": false,
+          "enclosing": "POST"
+        },
+        {
+          "file": "utils/stripe/server.ts",
+          "line": 89,
+          "path": "checkout.sessions.create",
+          "snippet": "stripe.checkout.sessions.create(params)",
+          "confidence": "high",
+          "status": "mapped",
+          "role": "checkout",
+          "inTest": false,
+          "enclosing": "checkoutWithStripe"
+        },
+        {
+          "file": "utils/stripe/server.ts",
+          "line": 153,
+          "path": "billingPortal.sessions.create",
+          "snippet": "stripe.billingPortal.sessions.create({ customer, return_url: getURL('/account') })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "createStripePortal"
+        },
+        {
+          "file": "utils/supabase/admin.ts",
+          "line": 108,
+          "path": "customers.create",
+          "snippet": "stripe.customers.create(customerData)",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false,
+          "enclosing": "createCustomerInStripe"
+        },
+        {
+          "file": "utils/supabase/admin.ts",
+          "line": 136,
+          "path": "customers.retrieve",
+          "snippet": "stripe.customers.retrieve( existingSupabaseCustomer.stripe_customer_id )",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false,
+          "enclosing": "createOrRetrieveCustomer"
+        },
+        {
+          "file": "utils/supabase/admin.ts",
+          "line": 142,
+          "path": "customers.list",
+          "snippet": "stripe.customers.list({ email: email })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false,
+          "enclosing": "createOrRetrieveCustomer"
+        },
+        {
+          "file": "utils/supabase/admin.ts",
+          "line": 200,
+          "path": "customers.update",
+          "snippet": "stripe.customers.update(customer, { name, phone, address })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "customer",
+          "inTest": false,
+          "enclosing": "copyBillingDetailsToCustomer"
+        },
+        {
+          "file": "utils/supabase/admin.ts",
+          "line": 228,
+          "path": "subscriptions.retrieve",
+          "snippet": "stripe.subscriptions.retrieve(subscriptionId, { expand: ['default_payment_method'] })",
+          "confidence": "high",
+          "status": "needs-human",
+          "role": "subscription",
+          "inTest": false,
+          "enclosing": "manageSubscriptionStatusChange"
+        }
+      ],
+      "clientSide": [
+        {
+          "file": "components/ui/Pricing/Pricing.tsx",
+          "line": 79,
+          "kind": "redirect-to-checkout",
+          "detail": "redirects to Checkout from the browser (Stripe.js)"
+        },
+        {
+          "file": "utils/stripe/client.ts",
+          "line": 1,
+          "kind": "stripe-js",
+          "detail": "loads Stripe.js"
+        }
+      ],
+      "triggers": [
+        {
+          "file": "components/ui/Pricing/Pricing.tsx",
+          "line": 57,
+          "target": "server action checkoutWithStripe",
+          "snippet": "const { errorRedirect, sessionId } = await checkoutWithStripe("
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "CheckoutResponse",
+          "field": "sessionId",
+          "file": "utils/stripe/server.ts",
+          "line": 18,
+          "source": "typescript"
+        }
+      ],
+      "envVars": [
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "where": [
+            {
+              "file": "utils/stripe/client.ts",
+              "line": 9
+            }
+          ]
+        },
+        {
+          "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE",
+          "where": [
+            {
+              "file": "utils/stripe/client.ts",
+              "line": 8
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "where": [
+            {
+              "file": "utils/stripe/config.ts",
+              "line": 4
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_SECRET_KEY_LIVE",
+          "where": [
+            {
+              "file": "utils/stripe/config.ts",
+              "line": 4
+            }
+          ]
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "where": [
+            {
+              "file": "app/api/webhooks/route.ts",
+              "line": 27
+            }
+          ]
+        }
+      ],
+      "envExampleFiles": [
+        {
+          "file": ".env.example",
+          "keys": [
+            "SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI",
+            "SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID",
+            "SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET"
+          ]
+        },
+        {
+          "file": ".env.local.example",
+          "keys": [
+            "NEXT_PUBLIC_SITE_URL",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+            "NEXT_PUBLIC_SUPABASE_URL",
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+            "STRIPE_SECRET_KEY",
+            "STRIPE_WEBHOOK_SECRET"
+          ]
+        }
+      ],
+      "hardcodedIds": [],
+      "issues": [
+        {
+          "code": "SUBSCRIPTIONS_STAY",
+          "severity": "needs-human",
+          "message": "Also sells subscriptions. Portage adds PayPal to one-time payments only and leaves subscriptions on Stripe.",
+          "where": [
+            {
+              "file": "utils/stripe/server.ts",
+              "line": 89
+            },
+            {
+              "file": "utils/stripe/server.ts",
+              "line": 153
+            },
+            {
+              "file": "utils/supabase/admin.ts",
+              "line": 228
+            }
+          ]
+        },
+        {
+          "code": "PARAM_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "Checkout sets `allow_promotion_codes`. PayPal: amount.breakdown.discount. PayPal has no promotion-code box. The app must apply codes itself.",
+          "where": [
+            {
+              "file": "utils/stripe/server.ts",
+              "line": 89
+            }
+          ]
+        },
+        {
+          "code": "PARAM_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "Checkout sets `subscription_data`. PayPal: PayPal Subscriptions.",
+          "where": [
+            {
+              "file": "utils/stripe/server.ts",
+              "line": 89
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.create`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "utils/supabase/admin.ts",
+              "line": 108
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.retrieve`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "utils/supabase/admin.ts",
+              "line": 136
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.list`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "utils/supabase/admin.ts",
+              "line": 142
+            }
+          ]
+        },
+        {
+          "code": "CALL_NEEDS_HUMAN",
+          "severity": "needs-human",
+          "message": "`customers.update`: No customer object in Orders v2. The payer's name and email come back on capture.",
+          "where": [
+            {
+              "file": "utils/supabase/admin.ts",
+              "line": 200
+            }
+          ]
+        }
+      ],
+      "supported": true
+    }
+  ],
+  "otherLanguages": [],
+  "issues": [],
+  "supported": true,
+  "stats": {
+    "filesSeen": 90,
+    "filesParsed": 12,
+    "ms": 0
+  }
+}

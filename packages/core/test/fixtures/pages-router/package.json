@@ -1,0 +1,6 @@
+{
+  "name": "pages-router",
+  "private": true,
+  "description": "Fixture: Next.js Pages Router, a lazily created Stripe client, micro's buffer() for the raw body, and HUF prices.",
+  "dependencies": { "next": "^15.0.0", "react": "^19.0.0", "stripe": "^23.0.0", "micro": "^10.0.0" }
+}

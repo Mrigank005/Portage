@@ -1,0 +1,6 @@
+{
+  "name": "elements-only",
+  "private": true,
+  "description": "Fixture: a custom card form with Stripe Elements and PaymentIntents, no Checkout. Out of scope.",
+  "dependencies": { "next": "^16.0.0", "react": "^19.0.0", "stripe": "^23.0.0", "@stripe/react-stripe-js": "^3.0.0", "@stripe/stripe-js": "^5.0.0" }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "express-commonjs",
+  "private": true,
+  "description": "Fixture: the classic CommonJS Express Checkout sample shape.",
+  "dependencies": {
+    "express": "^4.21.0",
+    "stripe": "^17.0.0"
+  }
+}

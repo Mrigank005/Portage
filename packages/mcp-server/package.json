@@ -1,0 +1,25 @@
+{
+  "name": "@portage/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Portage's MCP server: the tools a coding agent calls to add PayPal to a Stripe codebase.",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "node build.mjs",
+    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@portage/core": "*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
