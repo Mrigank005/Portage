@@ -1,0 +1,15 @@
+{
+  "name": "@portage/webhook-relay",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Forwards PayPal sandbox webhooks to apps running on a developer's machine. No dependencies.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test.mjs"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

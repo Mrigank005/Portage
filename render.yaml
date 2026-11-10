@@ -1,0 +1,14 @@
+# Render Blueprint for Portage's public pieces.
+services:
+  - type: web
+    name: portage-relay
+    runtime: node
+    plan: free
+    rootDir: apps/webhook-relay
+    buildCommand: "true"
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

@@ -10,12 +10,13 @@
     "packages/core",
     "packages/mcp-server",
     "packages/cli",
+    "apps/webhook-relay",
     "suite/brewbox-store",
     "suite/quill-saas"
   ],
   "scripts": {
     "standin": "tsx packages/standin/src/cli.ts --config suite/standin.config.json",
-    "test": "npm test -w packages/standin -w packages/core -w packages/mcp-server",
+    "test": "npm test -w packages/standin -w packages/core -w packages/mcp-server -w apps/webhook-relay",
     "suite:e2e": "node scripts/suite-e2e.mjs",
     "setup:check": "node --env-file=.env scripts/check-setup.mjs",
     "benchmark:real": "node --import tsx scripts/scan-real-repos.mts",
