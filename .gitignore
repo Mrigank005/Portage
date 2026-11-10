@@ -1,0 +1,33 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and builds
+node_modules/
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Python (suite apps)
+__pycache__/
+*.pyc
+.venv/
+
+# Test output
+playwright-report/
+test-results/
+coverage/
+
+# Logs and OS files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editors (keep shared MCP config)
+.idea/
+.vscode/*
+!.vscode/mcp.json
