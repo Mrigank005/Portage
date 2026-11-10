@@ -119,6 +119,8 @@ export interface ClientSideUse extends Loc {
 export interface Trigger extends Loc {
   target: string;
   snippet: string;
+  /** The file starts with "use client" (a React client component), so it can only read public env vars. */
+  clientComponent: boolean;
 }
 
 export interface DataField extends Loc {
@@ -194,6 +196,8 @@ export interface PlanStep {
   files: string[];
   details: string[];
   contextmatic: ContextMaticLookup[];
+  /** Portage reference code to start from (get_reference_code names). */
+  reference?: string[];
 }
 
 export interface ContextMaticLookup {

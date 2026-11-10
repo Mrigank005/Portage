@@ -21,7 +21,9 @@
     "benchmark:real": "node --import tsx scripts/scan-real-repos.mts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build:plugin": "npm run build -w packages/mcp-server",
-    "portage": "portage"
+    "portage": "portage",
+    "reference:embed": "node scripts/embed-reference.mjs",
+    "skill:sync": "node --import tsx scripts/sync-skill.mts"
   },
   "engines": {
     "node": ">=20.9"

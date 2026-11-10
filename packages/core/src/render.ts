@@ -118,6 +118,7 @@ export function renderPlan(plan: Plan): string {
   plan.steps.forEach((s, i) => {
     out.push(`${i + 1}. **${s.title}**${s.files.length ? ` (${s.files.map(code).join(", ")})` : ""}`);
     for (const d of s.details) out.push(`   - ${d}`);
+    if (s.reference?.length) out.push(`   - Start from Portage's reference code: ${s.reference.map((r) => `get_reference_code ${code(r)}`).join(", ")}`);
     if (s.contextmatic.length) out.push(`   - ContextMatic first: ${s.contextmatic.map((l) => `${l.tool} ${code(l.query)}`).join("; ")}`);
   });
   out.push("");

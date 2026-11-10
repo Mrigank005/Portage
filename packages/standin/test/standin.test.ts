@@ -82,6 +82,13 @@ test("products and prices match Stripe's spec, including expansion", async () =>
   const bad = await raw("GET", "/v1/products?expand[]=data.nonsense");
   assert.equal(bad.status, 400);
   assert.match(bad.json.error.message, /cannot be expanded/);
+
+  // shippable, url and images round-trip and stay within Stripe's spec.
+  const kit = await stripe.products.create({ name: "Pour-Over Kit", shippable: true, url: "https://example.com/kit", images: ["https://example.com/kit.png"] });
+  assert.deepEqual([kit.shippable, kit.url, kit.images], [true, "https://example.com/kit", ["https://example.com/kit.png"]]);
+  spec.validate("product", (await raw("GET", `/v1/products/${kit.id}`)).json);
+  const notBool = await raw("POST", "/v1/products", { name: "x", shippable: "maybe" });
+  assert.equal(notBool.status, 400);
 });
 
 test("checkout, payment, webhooks and refunds work end to end with the official SDK", async () => {

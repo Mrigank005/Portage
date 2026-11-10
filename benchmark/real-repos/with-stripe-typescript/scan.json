@@ -237,7 +237,8 @@
           "file": "app/components/CheckoutForm.tsx",
           "line": 42,
           "target": "server action createCheckoutSession",
-          "snippet": "const { client_secret, url } = await createCheckoutSession(data);"
+          "snippet": "const { client_secret, url } = await createCheckoutSession(data);",
+          "clientComponent": true
         }
       ],
       "dataModel": [],

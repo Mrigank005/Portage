@@ -23,6 +23,13 @@ Record the lookups behind each change in the pull request description under a "C
 
 `packages/core/maps/stripe-paypal.json` holds every Stripe→PayPal translation; the planner contains no PayPal knowledge of its own. To name a new PayPal SDK method or model in the map, look it up through ContextMatic first, add it to `paypalSdk.methods` or `paypalSdk.models`, and record the lookup in `docs/contextmatic-lookups.md`. `packages/core/test/map.test.ts` fails on unconfirmed names.
 
+## Generated files
+
+- After editing `packages/core/reference/*`, run `npm run reference:embed` (the MCP server serves the embedded copy).
+- After editing `packages/core/src/playbook.ts`, run `npm run skill:sync` (it writes `plugin/skills/portage-migrate/SKILL.md`).
+
+Tests fail when either is out of date.
+
 ## Other rules
 
 - Sandbox only. Never use live PayPal or Stripe keys.

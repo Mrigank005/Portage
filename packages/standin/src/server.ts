@@ -181,7 +181,16 @@ export async function startStandin(opts: StandinOptions = {}): Promise<RunningSt
   const createProduct: Handler = (c) => {
     const b = c.body;
     if (!b.name) throw missingParam("name");
-    const product = buildProduct({ name: String(b.name), description: b.description, metadata: mergeMetadata({}, b.metadata), active: b.active === undefined ? true : b.active !== "false" });
+    if (b.shippable !== undefined && b.shippable !== "true" && b.shippable !== "false") throw badParam("shippable", "Invalid boolean");
+    const product = buildProduct({
+      name: String(b.name),
+      description: b.description,
+      metadata: mergeMetadata({}, b.metadata),
+      active: b.active === undefined ? true : b.active !== "false",
+      shippable: b.shippable === undefined ? null : b.shippable === "true",
+      url: b.url ? String(b.url) : null,
+      images: toArray(b.images).map(String),
+    });
     c.acct.products.push(product);
     if (b.default_price_data) {
       const d = b.default_price_data;

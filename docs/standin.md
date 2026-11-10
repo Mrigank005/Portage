@@ -14,7 +14,7 @@ Standin is **only** for Portage's test suite. On a real repo, Portage reads that
 
 | Area | Endpoints | Notes |
 |---|---|---|
-| Products | `POST/GET /v1/products`, `GET/POST /v1/products/:id` | `default_price_data`, metadata, `active`, `expand[]=data.default_price` |
+| Products | `POST/GET /v1/products`, `GET/POST /v1/products/:id` | `default_price_data`, metadata, `active`, `shippable`, `url`, `images`, `expand[]=data.default_price` |
 | Prices | `POST/GET /v1/prices`, `GET /v1/prices/:id` | One-time and recurring price objects, `active`; `expand[]=product` |
 | Checkout | `POST/GET /v1/checkout/sessions`, `GET /v1/checkout/sessions/:id`, `GET …/line_items`, `POST …/expire` | **Payment mode only.** Line items by active `price` (inactive prices are refused, as on Stripe) or inline `price_data`; `expand[]=line_items` and `payment_intent` |
 | Test pay page | `GET/POST /pay/:session_id` | Stands in for checkout.stripe.com; takes Stripe's public test cards; redirects to `success_url` with `{CHECKOUT_SESSION_ID}` filled in |

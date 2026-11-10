@@ -76,7 +76,7 @@ export function planMigration(scan: ScanResult, options: PlanOptions = {}): Plan
  * The app to plan for. With several supported apps, prefer the one that needs the fewest decisions from a person,
  * then the one with the most for Portage to reuse (a webhook, refunds). Ties keep folder order, so this is stable.
  */
-function pickApp(scan: ScanResult, wanted?: string): AppScan | undefined {
+export function pickApp(scan: ScanResult, wanted?: string): AppScan | undefined {
   if (wanted) return scan.apps.find((a) => a.root === wanted || a.name === wanted);
   const supported = scan.apps.filter((a) => a.supported);
   if (!supported.length) return scan.apps[0];
@@ -104,6 +104,7 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
   const clientExt = clientFile ? (path.posix.extname(clientFile).slice(1) || ext) : ext;
   const paypalClientFile = join(libDir, `paypal.${clientExt}`);
   const moneyFile = join(libDir, `paypal-money.${clientExt}`);
+  const webhookHelperFile = join(libDir, `paypal-webhook.${clientExt}`);
 
   const lookups: ContextMaticLookup[] = [];
   const look = (tool: ContextMaticLookup["tool"], query: string, why: string): ContextMaticLookup => {
@@ -190,7 +191,10 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
     { name: "PAYPAL_CLIENT_SECRET", example: "your-sandbox-client-secret", note: "Server only. Never sent to the browser or committed" },
     { name: "PAYPAL_ENVIRONMENT", example: "sandbox", note: "sandbox or live" },
     { name: "PAYPAL_WEBHOOK_ID", example: "your-webhook-id", note: "ID of the webhook registered for this app; used to verify webhooks" },
-    ...(isNext ? [{ name: "NEXT_PUBLIC_PAYPAL_CLIENT_ID", example: "your-sandbox-client-id", note: "Same client ID, exposed to the browser for the buttons (it is public)" }] : []),
+    // A server component can pass the (public) client ID down as a prop; only client components need NEXT_PUBLIC_.
+    ...(isNext && app.triggers.some((t) => t.clientComponent)
+      ? [{ name: "NEXT_PUBLIC_PAYPAL_CLIENT_ID", example: "your-sandbox-client-id", note: "Same client ID, for buttons in client components (it is public)" }]
+      : []),
   ];
   const mappedEnv = map.config.env.filter((e) => app.envVars.some((v) => v.name === e.stripe) || app.envExampleFiles.some((f) => f.keys.includes(e.stripe)));
   steps.push({
@@ -219,9 +223,9 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
     details: [
       `\`${paypalClientFile}\`: one shared SDK client (client credentials from the environment, sandbox unless PAYPAL_ENVIRONMENT says otherwise) with the Orders and Payments controllers${clientFile ? `, next to \`${clientFile}\`` : ""}.`,
       `\`${moneyFile}\`: converts the app's integer minor units to PayPal's decimal strings and back (2400 → "24.00"; JPY stays whole). It refuses amounts PayPal can't represent instead of rounding (HUF and TWD take no decimals on PayPal). Portage's own tested helper is the reference.`,
-      "Also a small helper for the webhook verification call, which is a REST call: the Server SDK has no webhook methods (confirmed through ContextMatic).",
     ],
     contextmatic: clientLookups,
+    reference: ["paypal-client", "paypal-money"],
   });
   addFile(create, paypalClientFile, "PayPal Server SDK client");
   addFile(create, moneyFile, "Minor units ↔ PayPal decimal strings");
@@ -360,12 +364,13 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
       priceSource,
       `intent \`CAPTURE\`; items with \`quantity\` as a string; \`amount.breakdown.itemTotal\` equal to the sum of the items, and \`amount.value\` equal to that (PayPal rejects the order otherwise). Amounts go through the money helper.`,
       ref ? `\`customId\` ← the same reference the Stripe session carries (\`${ref}\`), so the webhook can find the app's record.` : "`customId` ← the app's own order ID, so the webhook can find the record.",
+      `Set \`paymentSource.paypal.experienceContext.returnUrl\` and \`cancelUrl\` to the same pages as the Stripe session's success and cancel URLs${co?.successUrl ? ` (\`${co.successUrl}\`${co.cancelUrl ? `, \`${co.cancelUrl}\`` : ""})` : ""}, with the app's order ID in place of \`{CHECKOUT_SESSION_ID}\`. They are required whenever an experience context is sent: without them PayPal shows "Things don't appear to be working at the moment" after the buyer logs in.`,
       `\`shippingPreference\` \`${shipping}\`${shipping === "NO_SHIPPING" ? " (the Stripe session doesn't collect an address)" : " (the Stripe session collects an address)"}.`,
       ...(co?.params.customer_email ? [`Prefill the buyer's email (\`${co.params.customer_email}\`) as \`paymentSource.paypal.emailAddress\`.`] : []),
       `Send \`paypalRequestId\` (PayPal-Request-Id) so a retried request can't create a second order${co?.idempotencyKey ? ", as the Stripe call uses an idempotency key" : ""}.`,
       storeOrderId ? `Store the PayPal order ID the way the Stripe route stores the session ID (\`${storeOrderId.call}(…, { ${storeOrderId.field}: session.id })\` → \`paypalOrderId\`).` : "Store the PayPal order ID on the app's record.",
       ...(collide ? ["Name clash: the app already has a function called `createOrder`. Keep the SDK call qualified (`ordersController.createOrder`)."] : []),
-      "Return the PayPal order ID as JSON; the buttons need it.",
+      "Answer `{ orderId }` as JSON: the buttons call this route to start the payment. For a bad request answer 400 with `{ error }`, a message the buyer can read.",
     ],
     contextmatic: orderLookups,
   });
@@ -389,6 +394,7 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
       successUrl
         ? `Send the browser to the same success page Stripe uses (\`${successUrl}\`). It has no PayPal equivalent for \`{CHECKOUT_SESSION_ID}\`, so pass the app's own order ID.`
         : "Send the browser to the app's existing success page.",
+      "Answer `{ redirectUrl }` (the buttons go there), or a 4xx/5xx with `{ error }` that the buttons show. Log failures with PayPal's debug_id.",
     ],
     contextmatic: captureLookups,
   });
@@ -426,23 +432,27 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
   const refundEvent = wh?.events.find((e) => e.type === "charge.refunded");
   const webhookLookups = [
     look("ask", "Does the PayPal Server SDK include a method to verify webhook signatures?", "Already answered: no. Use the REST verification call"),
-    ...(refundEvent ? [look("endpoint_search", "getCapturedPayment", "Capture status and refunded total after a refund event")] : []),
+    ...(refundEvent ? [look("model_search", "SellerPayableBreakdown", "totalRefundedAmount: the running refunded total on a refund")] : []),
   ];
   steps.push({
     id: "webhook-route",
     title: `Add \`POST ${webhookPath}\``,
     kind: isNext ? "create" : "edit",
-    files: [webhookRouteFile],
+    files: [webhookHelperFile, webhookRouteFile],
     details: [
-      `Verify every event with \`POST /v1/notifications/verify-webhook-signature\` (PAYPAL_WEBHOOK_ID plus the PAYPAL-TRANSMISSION-ID, -TIME, -SIG, PAYPAL-CERT-URL and PAYPAL-AUTH-ALGO headers) and answer 400 when it fails, like the Stripe handler does for a bad signature.`,
-      ...(isNext ? [] : ["It doesn't need the raw body: register it after `express.json()` or give it `express.json()` itself."]),
+      `Verify every event with \`verifyPayPalWebhook(headers, rawBody)\` from the \`paypal-webhook\` reference before anything else (it calls \`POST /v1/notifications/verify-webhook-signature\` with PAYPAL_WEBHOOK_ID and the five PAYPAL-* transmission headers), and answer 400 when it fails, like the Stripe handler does for a bad signature.`,
+      isNext
+        ? "Read the body with `await request.text()`: PayPal checks the signature over the exact bytes it sent."
+        : "Read the body as text on this route (`express.text({ type: \"application/json\" })`, registered before `express.json()`): PayPal checks the signature over the exact bytes it sent.",
       ...events.filter((e) => e.paypal).map((e) => `\`${e.paypal}\`${e.stripe !== "(none)" ? ` (was \`${e.stripe}\`)` : ""}: ${e.reuse.length ? `call ${e.reuse.map((r) => `\`${r}\``).join(", ")}` : "update the app's record"}${e.status === "needs-human" ? " (needs a decision)" : ""}.`),
       "Find the app's record by `custom_id`, or by the stored PayPal order or capture ID. Make every branch idempotent: PayPal retries deliveries.",
-      ...(refundEvent ? ["Refund events carry only that refund's amount, not Stripe's running `amount_refunded`. Read the capture (`getCapturedPayment`) for its status and total, or keep a running total, before calling the same refund-recording code."] : []),
+      ...(refundEvent ? ["Stripe's `amount_refunded` is a running total; on PayPal it is `resource.seller_payable_breakdown.total_refunded_amount` (`resource.amount` is only this refund). Set the record's refunded total from it, so the webhook and the refund route can both record the same refund without counting it twice. The capture ID is in the refund's `up` link (`capturedPaymentIdOfRefund` in the reference)."] : []),
       "Register the webhook URL in the PayPal developer dashboard (or through the PayPal API) for these event types; its ID is PAYPAL_WEBHOOK_ID.",
     ],
     contextmatic: webhookLookups,
+    reference: ["paypal-webhook"],
   });
+  addFile(create, webhookHelperFile, "PayPal webhook verification (a REST call: the SDK has no webhook methods)");
   addFile(isNext ? create : edit, webhookRouteFile, `POST ${webhookPath}`);
 
   // ---- Refunds.
@@ -467,6 +477,7 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
   const triggers = app.triggers;
   const reactTrigger = triggers.find((t) => /\.(tsx|jsx)$/.test(t.file));
   const buttonsFile = reactTrigger ? join(dirOf(reactTrigger.file), `PayPalButtons.${ts ? "tsx" : "jsx"}`) : undefined;
+  const captureUrlTemplate = capturePath.replace(/\[orderId\]|:orderId/, "{orderId}");
   steps.push({
     id: "buttons",
     title: mode === "add" ? "Show PayPal buttons next to the existing checkout" : "Replace the Stripe checkout button with PayPal buttons",
@@ -477,12 +488,14 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
         ? triggers.map((t) => `${t.file}:${t.line} starts checkout (\`${t.target}\`): \`${t.snippet}\``)
         : ["No checkout button was found by its route. Find where the UI starts checkout."]),
       reactTrigger
-        ? `Create \`${buttonsFile}\`, a client component using \`${map.config.packages.react}\` (\`PayPalScriptProvider\`, \`PayPalButtons\`) that calls \`POST ${apiBase}/orders\` in \`createOrder\` and \`POST ${capturePath.replace(/\[orderId\]|:orderId/, "{id}")}\` in \`onApprove\`.`
-        : `Load the PayPal JS SDK script with the public client ID and the order's currency, and render \`paypal.Buttons({ createOrder, onApprove, onCancel })\` calling \`POST ${apiBase}/orders\` and \`POST ${capturePath.replace(/\[orderId\]|:orderId/, "{id}")}\`.`,
+        ? `Create \`${buttonsFile}\` from the \`PayPalButtons\` reference (PayPal JS SDK v6 through \`${map.config.packages.react}/sdk-v6\`). Wrap the page section once in \`PayPalCheckoutProvider\` with the public client ID (${reactTrigger.clientComponent ? "from `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, since the page is a client component" : "read `PAYPAL_CLIENT_ID` in the server component and pass it as a prop: it is public, so no `NEXT_PUBLIC_` variable is needed"}), and put \`PayPalCheckoutButton\` beside the existing button with \`createOrderUrl="${apiBase}/orders"\`, \`captureOrderUrl="${captureUrlTemplate}"\` and the existing form's id as \`formId\` (give the form an id if it has none).`
+        : `Add the \`paypal-buttons-browser\` reference (PayPal JS SDK v6, no build step): serve the script, add the \`<meta name="paypal-checkout">\` tag with the public client ID, \`data-create-url="${apiBase}/orders"\` and \`data-capture-url="${captureUrlTemplate}"\`, and a \`<paypal-button data-form="…">\` next to each existing checkout form (give each form an id).`,
       mode === "add" ? "Keep the existing Stripe button exactly as it is." : "Remove the Stripe button once the PayPal buttons work.",
-      "onCancel returns to the page the buyer was on, like Stripe's cancel_url.",
+      "Cancelling leaves the buyer on the same page, like Stripe's cancel_url.",
+      "PayPal opens a popup: if the app sends a `Cross-Origin-Opener-Policy` header (Helmet sends `same-origin` by default), use `same-origin-allow-popups` on pages with PayPal buttons, as PayPal's v6 samples do.",
     ],
     contextmatic: [],
+    reference: [reactTrigger ? "PayPalButtons" : "paypal-buttons-browser"],
   });
   if (buttonsFile) addFile(create, buttonsFile, "PayPal buttons (client component)");
   for (const t of triggers) addFile(edit, t.file, mode === "add" ? "Add PayPal buttons next to the Stripe checkout" : "Swap the Stripe checkout for PayPal buttons");

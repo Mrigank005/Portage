@@ -30,6 +30,7 @@ test("Brewbox, add mode: new routes in the App Router, existing fulfilment reuse
     "lib/paypal-money.ts",
     "app/api/paypal/orders/route.ts",
     "app/api/paypal/orders/[orderId]/capture/route.ts",
+    "lib/paypal-webhook.ts",
     "app/api/webhooks/paypal/route.ts",
     "app/PayPalButtons.tsx",
   ]);
@@ -49,7 +50,8 @@ test("Brewbox, add mode: new routes in the App Router, existing fulfilment reuse
   assert.ok(p.steps.find((s) => s.id === "create-order-route")!.details.some((d) => d.includes("Name clash")), "the app has its own createOrder");
   assert.equal(p.catalog.needed, false);
   assert.deepEqual(p.needsHuman, []);
-  assert.ok(p.env.add.some((e) => e.name === "NEXT_PUBLIC_PAYPAL_CLIENT_ID"));
+  assert.ok(!p.env.add.some((e) => e.name === "NEXT_PUBLIC_PAYPAL_CLIENT_ID"), "a server-component page passes the public client ID as a prop");
+  assert.ok(p.steps.find((s) => s.id === "create-order-route")!.details.some((d) => d.includes("returnUrl") && d.includes("/order/")), "return and cancel URLs come from the Stripe session");
   assert.ok(p.untouched.some((u) => u.includes("POST /api/checkout")));
   lookupsAreConfirmed(p);
   const md = renderPlan(p);
@@ -72,7 +74,7 @@ test("Brewbox, replace mode: catalog copied, Stripe checkout removed, Stripe his
 test("Quill, add mode: routes added to the Express server, inline logic extracted into shared functions", () => {
   const p = planMigration(scanRepo(suite("quill-saas")));
   assert.equal(p.status, "ready");
-  assert.deepEqual(files(p, "create"), ["src/paypal.ts", "src/paypal-money.ts"]);
+  assert.deepEqual(files(p, "create"), ["src/paypal.ts", "src/paypal-money.ts", "src/paypal-webhook.ts"]);
   assert.deepEqual(files(p, "edit").sort(), [".env.example", "package.json", "src/db.ts", "src/server.ts"]);
   assert.deepEqual(p.routes.map((r) => `${r.method} ${r.path} ${r.file}`), [
     "POST /paypal/orders src/server.ts",

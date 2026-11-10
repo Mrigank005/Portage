@@ -4,7 +4,7 @@
 
 Portage is a plugin for AI coding agents. It reads a codebase that takes payments through Stripe, wires PayPal into the same checkout, orders and webhooks, then proves the result works with a real PayPal sandbox payment before handing over a pull request.
 
-> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), and Portage's first two tools, **scan** and **plan**, with the MCP server and plugin skeleton around them. Editing, catalog copy and the sandbox payment test come next; steps marked *planned* are not built yet.
+> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, and the playbook that drives the edit step. Portage's workflow has turned Brewbox into a store that takes real PayPal sandbox payments and refunds ([the run](benchmark/runs/brewbox-add/README.md)). The automated sandbox payment test (`verify_checkout`) and the webhook relay come next; steps marked *planned* are not built yet.
 
 ---
 
@@ -19,12 +19,12 @@ AI coding agents should make this easy, but they guess at payment APIs. PayPal's
 1. **Scan** *(built)*. Parse the code's structure to find the Stripe client, Checkout sessions, webhook handlers and the events they handle (down to the app function each one calls), refunds, the checkout button, where Stripe IDs are stored, and settings. Unsupported repos get a clear reason instead of a partial run.
 2. **Plan** *(built)*. Apply the [Stripe→PayPal map](packages/core/maps/stripe-paypal.json) (data, not code) to list the files to create and change, the new routes, the webhook event mapping, money conversion and anything that needs a person, plus the ContextMatic lookups to make for each step.
 3. **Approve.** Nothing is edited until the developer approves the plan.
-4. **Edit** *(planned)*. The coding agent writes the PayPal integration with the official PayPal Server SDK, looking up every SDK method and model through ContextMatic first.
-5. **Copy the catalog** *(planned, replace mode)*. Recreate Stripe products and prices for PayPal.
+4. **Edit** *(built: playbook and reference code)*. The coding agent writes the PayPal integration with the official PayPal Server SDK, starting from Portage's tested reference code (`get_reference_code`) and looking up every SDK method and model through ContextMatic first. Buttons use PayPal's JS SDK v6.
+5. **Copy the catalog** *(built, replace mode)*. `migrate_catalog` copies Stripe products to the PayPal catalog (dry run first, idempotent) and keeps one-time prices, as PayPal amounts, in `portage.catalog.json`. It makes the same call as the PayPal Agent Toolkit's `create_product` (`POST /v1/catalogs/products`); Portage doesn't bundle the toolkit itself because its dependency tree adds seven npm security advisories, and Portage keeps `npm audit` at zero.
 6. **Prove it** *(planned)*. Start the app and complete a real sandbox checkout in a headless browser: buyer approval, capture, webhook, order marked paid, refund.
 7. **Hand over a pull request** *(planned)* with a report card of what changed, what was tested, and what still needs a human.
 
-Scan and plan only read code; they never change files and never read real env files. How they work, and everything they detect: [docs/scan-and-plan.md](docs/scan-and-plan.md). Results on five real open-source Stripe apps: [benchmark/real-repos](benchmark/real-repos/README.md).
+Scan and plan only read code; they never change files and never read real env files. How they work, and everything they detect: [docs/scan-and-plan.md](docs/scan-and-plan.md). The edit step, reference code and catalog copy: [docs/edit-and-catalog.md](docs/edit-and-catalog.md). Results on five real open-source Stripe apps: [benchmark/real-repos](benchmark/real-repos/README.md).
 
 ### Two modes
 
@@ -69,10 +69,11 @@ Every PayPal SDK method and model in Portage's map was confirmed through Context
 ```
 packages/core        scanner, Stripe→PayPal map (maps/stripe-paypal.json),
                      money conversion, planner                                (built)
-packages/mcp-server  Portage MCP server: scan_payment_surface, plan_migration (built; more tools planned)
+packages/mcp-server  Portage MCP server: scan_payment_surface, plan_migration, get_reference_code,
+                     migrate_catalog, and the `migrate` prompt (built; verify_checkout planned)
 packages/cli         `portage scan` and `portage plan`                        (built; `init` and `report` planned)
 packages/standin     Standin, the local Stripe-compatible test server         (built)
-plugin/              plugin manifest, MCP config and the portage-migrate skill (skeleton)
+plugin/              plugin manifest, MCP config and the portage-migrate skill
 suite/               small test apps used to evaluate Portage                 (built)
   brewbox-store        Next.js shop
   quill-saas           Express app selling credit packs
@@ -89,7 +90,8 @@ You need Node.js 20+. You won't need a Stripe account.
 
 ```bash
 npm install
-npm test                # all tests; the first run downloads Stripe's OpenAPI spec into .cache/
+npm test                # all tests; the first run downloads Stripe's OpenAPI spec into .cache/.
+                        # With PayPal sandbox keys in .env, a few tests also run against the real sandbox.
 npm run suite:e2e       # Standin + Brewbox + Quill, with real payments driven through each
 
 npx portage scan suite/brewbox-store          # what Portage finds in a Stripe app
@@ -97,9 +99,11 @@ npx portage plan suite/quill-saas             # the plan for adding PayPal (--mo
 npx portage plan suite/ledgerline-flask       # a refusal, with the reason
 ```
 
+To try PayPal payments yourself you need a PayPal developer account with sandbox credentials. Use a **US sandbox buyer** to pay: in our runs, the default sandbox buyer got "This seller doesn't accept payments in your currency", and a US buyer worked.
+
 The suite check starts everything itself and needs ports 4242, 4300 and 4301 free. See [`suite/README.md`](suite/README.md) to run the apps by hand.
 
-Working in this repository with Claude Code, Cursor or GitHub Copilot also gives your agent Portage's MCP tools (`scan_payment_surface`, `plan_migration`) next to ContextMatic.
+Working in this repository with Claude Code, Cursor or GitHub Copilot also gives your agent Portage's MCP tools (`scan_payment_surface`, `plan_migration`, `get_reference_code`, `migrate_catalog`) and the `migrate` prompt, next to ContextMatic.
 
 Setup prompts for the Portage plugin will be added here as it comes together. It will also need a PayPal developer account with sandbox credentials and a supported coding agent; see [`.env.example`](.env.example) for the configuration it reads.
 

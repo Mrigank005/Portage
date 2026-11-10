@@ -27,7 +27,8 @@
       "RefundRequest",
       "Order",
       "CapturedPayment",
-      "Refund"
+      "Refund",
+      "SellerPayableBreakdown"
     ],
     "notInSdk": {
       "webhookVerification": "The Server SDK has no webhook methods (ContextMatic, 2026-11-10). Verify with a direct REST call to POST /v1/notifications/verify-webhook-signature, using an OAuth token for the same client credentials."
@@ -43,17 +44,31 @@
   "calls": [
     {
       "stripe": "checkout.sessions.create",
-      "when": { "mode": "payment" },
+      "when": {
+        "mode": "payment"
+      },
       "role": "checkout",
       "status": "mapped",
       "paypal": "Orders v2: create an order with intent CAPTURE on the server; PayPal JS SDK buttons on the page; capture on approval",
-      "sdk": ["OrdersController.createOrder", "OrdersController.captureOrder"],
-      "models": ["OrderRequest", "PurchaseUnitRequest", "ItemRequest", "AmountWithBreakdown", "AmountBreakdown", "Money"],
+      "sdk": [
+        "OrdersController.createOrder",
+        "OrdersController.captureOrder"
+      ],
+      "models": [
+        "OrderRequest",
+        "PurchaseUnitRequest",
+        "ItemRequest",
+        "AmountWithBreakdown",
+        "AmountBreakdown",
+        "Money"
+      ],
       "notes": "A redirect to a hosted page becomes two server routes (create order, capture order) called by the buttons. Build the order on the server from trusted prices, never from amounts sent by the browser."
     },
     {
       "stripe": "checkout.sessions.create",
-      "when": { "mode": "subscription" },
+      "when": {
+        "mode": "subscription"
+      },
       "role": "subscription",
       "status": "needs-human",
       "paypal": "PayPal Subscriptions with a billing plan (stretch goal, not in Portage's MVP)",
@@ -61,7 +76,9 @@
     },
     {
       "stripe": "checkout.sessions.create",
-      "when": { "mode": "setup" },
+      "when": {
+        "mode": "setup"
+      },
       "role": "saved-payment",
       "status": "needs-human",
       "paypal": "PayPal Vault (saving payment methods is out of scope)",
@@ -72,8 +89,12 @@
       "role": "checkout-read",
       "status": "mapped",
       "paypal": "Get the order by ID",
-      "sdk": ["OrdersController.getOrder"],
-      "models": ["Order"],
+      "sdk": [
+        "OrdersController.getOrder"
+      ],
+      "models": [
+        "Order"
+      ],
       "notes": "A success page that reads the session should read the app's own order record instead; it is updated for both providers."
     },
     {
@@ -81,8 +102,12 @@
       "role": "checkout-read",
       "status": "mapped",
       "paypal": "Items are on the order: purchase_units[].items",
-      "sdk": ["OrdersController.getOrder"],
-      "models": ["Order"],
+      "sdk": [
+        "OrdersController.getOrder"
+      ],
+      "models": [
+        "Order"
+      ],
       "notes": "The capture response and getOrder both carry the purchase units."
     },
     {
@@ -120,8 +145,15 @@
       "role": "refund",
       "status": "mapped",
       "paypal": "Refund the captured payment by capture ID",
-      "sdk": ["PaymentsController.refundCapturedPayment"],
-      "models": ["RefundRequest", "Money", "Refund"],
+      "sdk": [
+        "PaymentsController.refundCapturedPayment"
+      ],
+      "models": [
+        "RefundRequest",
+        "Money",
+        "Refund",
+        "SellerPayableBreakdown"
+      ],
       "notes": "Store the PayPal capture ID on the order so refunds can find it. An empty body is a full refund; a partial refund sends amount as Money, converted from minor units. Send PayPal-Request-Id for idempotency."
     },
     {
@@ -129,8 +161,12 @@
       "role": "refund",
       "status": "mapped",
       "paypal": "Get the refund by ID",
-      "sdk": ["PaymentsController.getRefund"],
-      "models": ["Refund"]
+      "sdk": [
+        "PaymentsController.getRefund"
+      ],
+      "models": [
+        "Refund"
+      ]
     },
     {
       "stripe": "refunds.list",
@@ -143,16 +179,24 @@
       "role": "payment-read",
       "status": "mapped",
       "paypal": "Get the captured payment by ID",
-      "sdk": ["PaymentsController.getCapturedPayment"],
-      "models": ["CapturedPayment"]
+      "sdk": [
+        "PaymentsController.getCapturedPayment"
+      ],
+      "models": [
+        "CapturedPayment"
+      ]
     },
     {
       "stripe": "charges.retrieve",
       "role": "payment-read",
       "status": "mapped",
       "paypal": "Get the captured payment by ID",
-      "sdk": ["PaymentsController.getCapturedPayment"],
-      "models": ["CapturedPayment"]
+      "sdk": [
+        "PaymentsController.getCapturedPayment"
+      ],
+      "models": [
+        "CapturedPayment"
+      ]
     },
     {
       "stripe": "paymentIntents.create",
@@ -166,7 +210,10 @@
       "role": "custom-flow",
       "status": "needs-human",
       "paypal": "Orders v2 with intent AUTHORIZE, then capture the authorization",
-      "sdk": ["OrdersController.authorizeOrder", "PaymentsController.captureAuthorizedPayment"]
+      "sdk": [
+        "OrdersController.authorizeOrder",
+        "PaymentsController.captureAuthorizedPayment"
+      ]
     },
     {
       "stripe": "paymentIntents.confirm",
@@ -350,7 +397,7 @@
       "stripe": "charge.refunded",
       "paypal": "PAYMENT.CAPTURE.REFUNDED",
       "status": "mapped",
-      "notes": "Stripe's charge carries the running total (amount_refunded) and a fully-refunded flag. PayPal's event resource is the single refund, with only that refund's amount. Get the running total and status from the capture (getCapturedPayment, via the refund's 'up' link) or keep a running total in the app."
+      "notes": "Stripe's charge carries the running total (amount_refunded) and a fully-refunded flag. PayPal's event resource is the refund itself: its amount is only this refund, but seller_payable_breakdown.total_refunded_amount is the running total (SellerPayableBreakdown.totalRefundedAmount in the SDK). Fully refunded when that total reaches the captured amount."
     },
     {
       "stripe": "charge.dispute.created",
@@ -400,70 +447,315 @@
     }
   ],
   "sessionParams": [
-    { "stripe": "mode", "paypal": "intent", "status": "mapped", "notes": "payment becomes CAPTURE." },
-    { "stripe": "line_items[].price", "paypal": "purchase_units[].items[].unit_amount", "status": "mapped", "notes": "Read the price on the server (from Stripe in add mode, from portage.catalog.json or the app's own table in replace mode)." },
-    { "stripe": "line_items[].price_data", "paypal": "purchase_units[].items[]", "status": "mapped", "notes": "product_data.name becomes name, product_data.description becomes description, unit_amount becomes unit_amount as Money." },
-    { "stripe": "line_items[].quantity", "paypal": "purchase_units[].items[].quantity", "status": "mapped", "notes": "PayPal wants the quantity as a string of a whole number." },
-    { "stripe": "line_items", "paypal": "purchase_units[].amount.breakdown.item_total", "status": "mapped", "notes": "amount.value must equal item_total plus tax, shipping and handling, minus discounts, or PayPal rejects the order." },
-    { "stripe": "currency", "paypal": "amount.currency_code", "status": "mapped", "notes": "Upper-case ISO code. Check PayPal supports it; see currencies below." },
-    { "stripe": "client_reference_id", "paypal": "purchase_units[].custom_id", "status": "mapped", "notes": "Keeps the link to the app's own order record. invoice_id is an alternative but must be unique per merchant." },
-    { "stripe": "metadata", "paypal": "purchase_units[].custom_id", "status": "mapped", "notes": "PayPal has one custom_id string, not a metadata map. Put the app's order ID there and look the rest up in the app's database." },
-    { "stripe": "success_url", "paypal": "JS SDK onApprove, then navigate to the same success page", "status": "mapped", "notes": "Stripe fills in {CHECKOUT_SESSION_ID}; there is no PayPal equivalent, so pass the app's own order ID instead. For a redirect flow use payment_source.paypal.experience_context.return_url." },
-    { "stripe": "cancel_url", "paypal": "JS SDK onCancel", "status": "mapped", "notes": "Or experience_context.cancel_url for a redirect flow." },
-    { "stripe": "customer_email", "paypal": "payment_source.paypal.email_address", "status": "mapped", "notes": "Prefills the PayPal login. The payer may pay with a different email; the capture response has the real one." },
-    { "stripe": "locale", "paypal": "payment_source.paypal.experience_context.locale", "status": "mapped" },
-    { "stripe": "shipping_address_collection", "paypal": "experience_context.shipping_preference = GET_FROM_FILE", "status": "mapped", "notes": "Without it, send NO_SHIPPING so PayPal doesn't ask for an address for digital goods." },
-    { "stripe": "payment_intent_data.capture_method", "paypal": "intent AUTHORIZE", "status": "needs-human", "notes": "Manual capture becomes authorize now, capture later." },
-    { "stripe": "payment_method_types", "paypal": "JS SDK funding sources", "status": "needs-human", "notes": "Card-only is fine. Other methods (Klarna, iDEAL...) need their own decision." },
-    { "stripe": "allow_promotion_codes", "paypal": "amount.breakdown.discount", "status": "needs-human", "notes": "PayPal has no promotion-code box. The app must apply codes itself." },
-    { "stripe": "discounts", "paypal": "amount.breakdown.discount", "status": "needs-human" },
-    { "stripe": "automatic_tax", "paypal": "amount.breakdown.tax_total", "status": "needs-human", "notes": "PayPal doesn't calculate tax." },
-    { "stripe": "tax_id_collection", "paypal": null, "status": "needs-human" },
-    { "stripe": "subscription_data", "paypal": "PayPal Subscriptions", "status": "needs-human" },
-    { "stripe": "payment_intent_data.application_fee_amount", "paypal": "platform fees (multiparty)", "status": "blocker", "blocker": "STRIPE_CONNECT" },
-    { "stripe": "payment_intent_data.transfer_data", "paypal": "multiparty checkout", "status": "blocker", "blocker": "STRIPE_CONNECT" },
-    { "stripe": "payment_intent_data.on_behalf_of", "paypal": "multiparty checkout", "status": "blocker", "blocker": "STRIPE_CONNECT" },
-    { "stripe": "ui_mode", "paypal": "JS SDK buttons", "status": "mapped", "notes": "Hosted and embedded Checkout both become PayPal buttons on the app's own page." },
-    { "stripe": "idempotencyKey", "paypal": "PayPal-Request-Id header (paypalRequestId)", "status": "mapped", "notes": "Stops double charges on retries." }
+    {
+      "stripe": "mode",
+      "paypal": "intent",
+      "status": "mapped",
+      "notes": "payment becomes CAPTURE."
+    },
+    {
+      "stripe": "line_items[].price",
+      "paypal": "purchase_units[].items[].unit_amount",
+      "status": "mapped",
+      "notes": "Read the price on the server (from Stripe in add mode, from portage.catalog.json or the app's own table in replace mode)."
+    },
+    {
+      "stripe": "line_items[].price_data",
+      "paypal": "purchase_units[].items[]",
+      "status": "mapped",
+      "notes": "product_data.name becomes name, product_data.description becomes description, unit_amount becomes unit_amount as Money."
+    },
+    {
+      "stripe": "line_items[].quantity",
+      "paypal": "purchase_units[].items[].quantity",
+      "status": "mapped",
+      "notes": "PayPal wants the quantity as a string of a whole number."
+    },
+    {
+      "stripe": "line_items",
+      "paypal": "purchase_units[].amount.breakdown.item_total",
+      "status": "mapped",
+      "notes": "amount.value must equal item_total plus tax, shipping and handling, minus discounts, or PayPal rejects the order."
+    },
+    {
+      "stripe": "currency",
+      "paypal": "amount.currency_code",
+      "status": "mapped",
+      "notes": "Upper-case ISO code. Check PayPal supports it; see currencies below."
+    },
+    {
+      "stripe": "client_reference_id",
+      "paypal": "purchase_units[].custom_id",
+      "status": "mapped",
+      "notes": "Keeps the link to the app's own order record. invoice_id is an alternative but must be unique per merchant."
+    },
+    {
+      "stripe": "metadata",
+      "paypal": "purchase_units[].custom_id",
+      "status": "mapped",
+      "notes": "PayPal has one custom_id string, not a metadata map. Put the app's order ID there and look the rest up in the app's database."
+    },
+    {
+      "stripe": "success_url",
+      "paypal": "payment_source.paypal.experience_context.return_url, plus the JS SDK onApprove callback",
+      "status": "mapped",
+      "notes": "Set return_url to the same success page whenever the order sends an experience_context: without return_url and cancel_url PayPal shows \"Things don't appear to be working at the moment\" after the buyer logs in (found while tuning on Brewbox; PayPal's own v6 samples always set both). Stripe fills in {CHECKOUT_SESSION_ID}; PayPal has no equivalent, so use the app's own order ID."
+    },
+    {
+      "stripe": "cancel_url",
+      "paypal": "payment_source.paypal.experience_context.cancel_url, plus the JS SDK onCancel callback",
+      "status": "mapped",
+      "notes": "Required together with return_url whenever an experience_context is sent."
+    },
+    {
+      "stripe": "customer_email",
+      "paypal": "payment_source.paypal.email_address",
+      "status": "mapped",
+      "notes": "Prefills the PayPal login. The payer may pay with a different email; the capture response has the real one."
+    },
+    {
+      "stripe": "locale",
+      "paypal": "payment_source.paypal.experience_context.locale",
+      "status": "mapped"
+    },
+    {
+      "stripe": "shipping_address_collection",
+      "paypal": "experience_context.shipping_preference = GET_FROM_FILE",
+      "status": "mapped",
+      "notes": "Without it, send NO_SHIPPING so PayPal doesn't ask for an address for digital goods."
+    },
+    {
+      "stripe": "payment_intent_data.capture_method",
+      "paypal": "intent AUTHORIZE",
+      "status": "needs-human",
+      "notes": "Manual capture becomes authorize now, capture later."
+    },
+    {
+      "stripe": "payment_method_types",
+      "paypal": "JS SDK funding sources",
+      "status": "needs-human",
+      "notes": "Card-only is fine. Other methods (Klarna, iDEAL...) need their own decision."
+    },
+    {
+      "stripe": "allow_promotion_codes",
+      "paypal": "amount.breakdown.discount",
+      "status": "needs-human",
+      "notes": "PayPal has no promotion-code box. The app must apply codes itself."
+    },
+    {
+      "stripe": "discounts",
+      "paypal": "amount.breakdown.discount",
+      "status": "needs-human"
+    },
+    {
+      "stripe": "automatic_tax",
+      "paypal": "amount.breakdown.tax_total",
+      "status": "needs-human",
+      "notes": "PayPal doesn't calculate tax."
+    },
+    {
+      "stripe": "tax_id_collection",
+      "paypal": null,
+      "status": "needs-human"
+    },
+    {
+      "stripe": "subscription_data",
+      "paypal": "PayPal Subscriptions",
+      "status": "needs-human"
+    },
+    {
+      "stripe": "payment_intent_data.application_fee_amount",
+      "paypal": "platform fees (multiparty)",
+      "status": "blocker",
+      "blocker": "STRIPE_CONNECT"
+    },
+    {
+      "stripe": "payment_intent_data.transfer_data",
+      "paypal": "multiparty checkout",
+      "status": "blocker",
+      "blocker": "STRIPE_CONNECT"
+    },
+    {
+      "stripe": "payment_intent_data.on_behalf_of",
+      "paypal": "multiparty checkout",
+      "status": "blocker",
+      "blocker": "STRIPE_CONNECT"
+    },
+    {
+      "stripe": "ui_mode",
+      "paypal": "JS SDK buttons",
+      "status": "mapped",
+      "notes": "Hosted and embedded Checkout both become PayPal buttons on the app's own page."
+    },
+    {
+      "stripe": "idempotencyKey",
+      "paypal": "PayPal-Request-Id header (paypalRequestId)",
+      "status": "mapped",
+      "notes": "Stops double charges on retries."
+    }
   ],
   "objectFields": [
-    { "object": "checkout.session", "stripe": "id", "paypal": "order id (resource.supplementary_data.related_ids.order_id on the capture event)" },
-    { "object": "checkout.session", "stripe": "client_reference_id", "paypal": "custom_id" },
-    { "object": "checkout.session", "stripe": "metadata", "paypal": "custom_id" },
-    { "object": "checkout.session", "stripe": "payment_intent", "paypal": "capture id (resource.id on PAYMENT.CAPTURE.COMPLETED)" },
-    { "object": "checkout.session", "stripe": "payment_status", "paypal": "capture status COMPLETED" },
-    { "object": "checkout.session", "stripe": "customer_details", "paypal": "payer email and name from the capture response or getOrder (payment_source.paypal)" },
-    { "object": "checkout.session", "stripe": "amount_total", "paypal": "amount.value, a decimal string; convert back to minor units with the money helper" },
-    { "object": "checkout.session", "stripe": "currency", "paypal": "amount.currency_code (upper case)" },
-    { "object": "charge", "stripe": "payment_intent", "paypal": "capture id (from the refund's 'up' link)" },
-    { "object": "charge", "stripe": "amount_refunded", "paypal": "not on the event: PayPal sends only this refund's amount; sum refunds or read the capture" },
-    { "object": "charge", "stripe": "refunded", "paypal": "capture status REFUNDED (PARTIALLY_REFUNDED otherwise), from getCapturedPayment" },
-    { "object": "charge", "stripe": "amount", "paypal": "capture amount.value" }
+    {
+      "object": "checkout.session",
+      "stripe": "id",
+      "paypal": "order id (resource.supplementary_data.related_ids.order_id on the capture event)"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "client_reference_id",
+      "paypal": "custom_id"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "metadata",
+      "paypal": "custom_id"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "payment_intent",
+      "paypal": "capture id (resource.id on PAYMENT.CAPTURE.COMPLETED)"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "payment_status",
+      "paypal": "capture status COMPLETED"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "customer_details",
+      "paypal": "payer email and name from the capture response or getOrder (payment_source.paypal)"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "amount_total",
+      "paypal": "amount.value, a decimal string; convert back to minor units with the money helper"
+    },
+    {
+      "object": "checkout.session",
+      "stripe": "currency",
+      "paypal": "amount.currency_code (upper case)"
+    },
+    {
+      "object": "charge",
+      "stripe": "payment_intent",
+      "paypal": "capture id (from the refund's 'up' link)"
+    },
+    {
+      "object": "charge",
+      "stripe": "amount_refunded",
+      "paypal": "resource.seller_payable_breakdown.total_refunded_amount on the refund event (the running total; resource.amount is only this refund)"
+    },
+    {
+      "object": "charge",
+      "stripe": "refunded",
+      "paypal": "true when total_refunded_amount equals the captured amount (or the capture status is REFUNDED)"
+    },
+    {
+      "object": "charge",
+      "stripe": "amount",
+      "paypal": "capture amount.value"
+    }
   ],
   "config": {
     "env": [
-      { "stripe": "STRIPE_SECRET_KEY", "paypal": ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_ENVIRONMENT"], "notes": "PAYPAL_ENVIRONMENT=sandbox. Real values go in .env, never in the repo." },
-      { "stripe": "STRIPE_WEBHOOK_SECRET", "paypal": ["PAYPAL_WEBHOOK_ID"], "notes": "PayPal webhooks are verified by webhook ID through the verification API, not with a shared secret." },
-      { "stripe": "STRIPE_PUBLISHABLE_KEY", "paypal": ["PAYPAL_CLIENT_ID"], "notes": "The client ID is public and is what the JS SDK needs in the browser." }
+      {
+        "stripe": "STRIPE_SECRET_KEY",
+        "paypal": [
+          "PAYPAL_CLIENT_ID",
+          "PAYPAL_CLIENT_SECRET",
+          "PAYPAL_ENVIRONMENT"
+        ],
+        "notes": "PAYPAL_ENVIRONMENT=sandbox. Real values go in .env, never in the repo."
+      },
+      {
+        "stripe": "STRIPE_WEBHOOK_SECRET",
+        "paypal": [
+          "PAYPAL_WEBHOOK_ID"
+        ],
+        "notes": "PayPal webhooks are verified by webhook ID through the verification API, not with a shared secret."
+      },
+      {
+        "stripe": "STRIPE_PUBLISHABLE_KEY",
+        "paypal": [
+          "PAYPAL_CLIENT_ID"
+        ],
+        "notes": "The client ID is public and is what the JS SDK needs in the browser."
+      }
     ],
     "packages": {
       "server": "@paypal/paypal-server-sdk",
       "react": "@paypal/react-paypal-js",
       "browserScript": "https://www.paypal.com/sdk/js?client-id=CLIENT_ID&currency=CURRENCY"
     },
-    "stripePackages": ["stripe", "@stripe/stripe-js", "@stripe/react-stripe-js"]
+    "stripePackages": [
+      "stripe",
+      "@stripe/stripe-js",
+      "@stripe/react-stripe-js"
+    ]
   },
   "currencies": {
     "about": "Stripe amounts are integers in the currency's minor unit as Stripe defines it. PayPal amounts are decimal strings with PayPal's own number of decimals. They disagree for HUF and TWD: Stripe takes two decimals, PayPal takes none.",
     "paypal": {
-      "AUD": 2, "BRL": 2, "CAD": 2, "CNY": 2, "CZK": 2, "DKK": 2, "EUR": 2, "HKD": 2, "HUF": 0, "ILS": 2,
-      "JPY": 0, "MYR": 2, "MXN": 2, "TWD": 0, "NZD": 2, "NOK": 2, "PHP": 2, "PLN": 2, "GBP": 2, "RUB": 2,
-      "SGD": 2, "SEK": 2, "CHF": 2, "THB": 2, "USD": 2
+      "AUD": 2,
+      "BRL": 2,
+      "CAD": 2,
+      "CNY": 2,
+      "CZK": 2,
+      "DKK": 2,
+      "EUR": 2,
+      "HKD": 2,
+      "HUF": 0,
+      "ILS": 2,
+      "JPY": 0,
+      "MYR": 2,
+      "MXN": 2,
+      "TWD": 0,
+      "NZD": 2,
+      "NOK": 2,
+      "PHP": 2,
+      "PLN": 2,
+      "GBP": 2,
+      "RUB": 2,
+      "SGD": 2,
+      "SEK": 2,
+      "CHF": 2,
+      "THB": 2,
+      "USD": 2
     },
-    "paypalInCountryOnly": ["BRL", "CNY", "MYR"],
-    "stripeZeroDecimal": ["BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF"],
-    "stripeThreeDecimal": ["BHD", "JOD", "KWD", "OMR", "TND"],
-    "stripeTwoDecimalWholeOnly": ["ISK", "UGX"],
+    "paypalInCountryOnly": [
+      "BRL",
+      "CNY",
+      "MYR"
+    ],
+    "stripeZeroDecimal": [
+      "BIF",
+      "CLP",
+      "DJF",
+      "GNF",
+      "JPY",
+      "KMF",
+      "KRW",
+      "MGA",
+      "PYG",
+      "RWF",
+      "UGX",
+      "VND",
+      "VUV",
+      "XAF",
+      "XOF",
+      "XPF"
+    ],
+    "stripeThreeDecimal": [
+      "BHD",
+      "JOD",
+      "KWD",
+      "OMR",
+      "TND"
+    ],
+    "stripeTwoDecimalWholeOnly": [
+      "ISK",
+      "UGX"
+    ],
     "sources": [
       "https://developer.paypal.com/api/rest/reference/currency-codes/ (fetched 2026-11-10)",
       "https://docs.stripe.com/currencies (fetched 2026-11-10)"

@@ -2,7 +2,16 @@
 // (the tests validate every object type against it).
 import { API_VERSION, ids, nowSeconds, type Obj } from "./core.ts";
 
-export function buildProduct(p: { name: string; description?: string; metadata?: Obj; active?: boolean; hidden?: boolean }): Obj {
+export function buildProduct(p: {
+  name: string;
+  description?: string;
+  metadata?: Obj;
+  active?: boolean;
+  hidden?: boolean;
+  shippable?: boolean | null;
+  url?: string | null;
+  images?: string[];
+}): Obj {
   const t = nowSeconds();
   return {
     id: ids.product(),
@@ -11,18 +20,18 @@ export function buildProduct(p: { name: string; description?: string; metadata?:
     created: t,
     default_price: null,
     description: p.description ?? null,
-    images: [],
+    images: p.images ?? [],
     livemode: false,
     marketing_features: [],
     metadata: p.metadata ?? {},
     name: p.name,
     package_dimensions: null,
-    shippable: null,
+    shippable: p.shippable ?? null,
     statement_descriptor: null,
     tax_code: null,
     unit_label: null,
     updated: t,
-    url: null,
+    url: p.url ?? null,
     ...(p.hidden ? { _hidden: true } : {}),
   };
 }

@@ -1863,7 +1863,8 @@
           "file": "prebuilt-checkout-page/server/nextjs/app/CheckoutButton.tsx",
           "line": 13,
           "target": "POST /api/create-checkout-session",
-          "snippet": "form.action = \"/api/create-checkout-session\";"
+          "snippet": "form.action = \"/api/create-checkout-session\";",
+          "clientComponent": true
         }
       ],
       "dataModel": [],

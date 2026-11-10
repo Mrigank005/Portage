@@ -459,7 +459,8 @@
           "file": "components/ui/Pricing/Pricing.tsx",
           "line": 57,
           "target": "server action checkoutWithStripe",
-          "snippet": "const { errorRedirect, sessionId } = await checkoutWithStripe("
+          "snippet": "const { errorRedirect, sessionId } = await checkoutWithStripe(",
+          "clientComponent": true
         }
       ],
       "dataModel": [

@@ -11,13 +11,18 @@
   },
   "scripts": {
     "test": "node --import tsx --test \"test/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p reference"
   },
   "dependencies": {
+    "stripe": "^23.1.0",
     "ts-morph": "^28.0.0"
   },
   "devDependencies": {
+    "@paypal/paypal-server-sdk": "^2.5.0",
+    "@paypal/react-paypal-js": "^10.6.1",
     "@types/node": "^22.10.0",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }

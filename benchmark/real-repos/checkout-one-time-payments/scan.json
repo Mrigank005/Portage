@@ -160,7 +160,8 @@
           "file": "server/nextjs/app/page.tsx",
           "line": 42,
           "target": "POST /api/create-checkout-session",
-          "snippet": "<form action=\"/api/create-checkout-session\" method=\"POST\">"
+          "snippet": "<form action=\"/api/create-checkout-session\" method=\"POST\">",
+          "clientComponent": true
         }
       ],
       "dataModel": [],

@@ -43,12 +43,14 @@ after(async () => {
   if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-test("lists the two read-only tools, with instructions that require approval and ContextMatic", async () => {
+const TOOLS = ["get_reference_code", "migrate_catalog", "plan_migration", "scan_payment_surface"];
+
+test("lists the tools, marks which only read, and has instructions that require approval and ContextMatic", async () => {
   const { tools } = await dev.listTools();
-  assert.deepEqual(tools.map((t) => t.name).sort(), ["plan_migration", "scan_payment_surface"]);
+  assert.deepEqual(tools.map((t) => t.name).sort(), TOOLS);
   for (const t of tools) {
-    assert.equal(t.annotations?.readOnlyHint, true, t.name);
-    assert.deepEqual(t.inputSchema.required, ["repoPath"], t.name);
+    assert.equal(t.annotations?.readOnlyHint, t.name !== "migrate_catalog", t.name);
+    assert.deepEqual(t.inputSchema.required, t.name === "get_reference_code" ? ["name"] : ["repoPath"], t.name);
   }
   const plan = tools.find((t) => t.name === "plan_migration")!;
   assert.deepEqual((plan.inputSchema.properties as Record<string, { enum?: string[] }>).mode.enum, ["add", "replace"]);
@@ -94,9 +96,60 @@ test("bad input becomes a tool error, not a crash", async () => {
   assert.equal(json(await call(dev, "plan_migration", { repoPath: suite("brewbox-store") })).status, "ready");
 });
 
+test("get_reference_code returns tested code, in TypeScript or converted to JavaScript", async () => {
+  const ts = await call(dev, "get_reference_code", { name: "paypal-webhook" });
+  assert.match(ts.content[0].text, /^# Portage reference: paypal-webhook\.ts/);
+  assert.match(ts.content[0].text, /export async function verifyPayPalWebhook\(/);
+  assert.match(ts.content[0].text, /\*\*Settings:\*\* .*PAYPAL_WEBHOOK_ID/);
+  const cjs = await call(dev, "get_reference_code", { name: "paypal-client", language: "javascript", module: "commonjs" });
+  assert.match(cjs.content[0].text, /paypal-client\.cjs/);
+  assert.match(cjs.content[0].text, /require\("@paypal\/paypal-server-sdk"\)/);
+  assert.ok(!/: Client \| undefined/.test(cjs.content[0].text), "types are removed");
+  const jsx = await call(dev, "get_reference_code", { name: "PayPalButtons", language: "javascript" });
+  assert.match(jsx.content[0].text, /PayPalButtons\.jsx[\s\S]*@paypal\/react-paypal-js\/sdk-v6/);
+  const browser = await call(dev, "get_reference_code", { name: "paypal-buttons-browser" });
+  assert.match(browser.content[0].text, /web-sdk\/v6\/core/);
+});
+
+test("the migrate prompt carries the playbook", async () => {
+  const { prompts } = await dev.listPrompts();
+  assert.deepEqual(prompts.map((p) => p.name), ["migrate"]);
+  const got = await dev.getPrompt({ name: "migrate", arguments: { repoPath: "/repo/brewbox", mode: "add" } });
+  const body = (got.messages[0].content as { text: string }).text;
+  assert.match(body, /Nothing is edited before the developer approves the plan/);
+  assert.match(body, /get_reference_code/);
+  assert.match(body, /Apply this playbook to `\/repo\/brewbox` in \*\*add\*\* mode/);
+});
+
+test("migrate_catalog: a dry run reads the catalog from Standin and creates nothing; bad settings are a clear error", async () => {
+  const { startStandin } = await import("../../standin/src/server.ts");
+  const { loadConfig } = await import("../../standin/src/config.ts");
+  const standin = await startStandin({ port: 0, statePath: null, config: loadConfig(path.resolve(pkgDir, "../../suite/standin.config.json")) });
+  const envFile = path.join(tmp, "catalog.env");
+  try {
+    fs.writeFileSync(envFile, `STRIPE_SECRET_KEY=sk_test_standin_brewbox\nSTRIPE_API_BASE=http://127.0.0.1:${standin.port}\nPAYPAL_ENVIRONMENT=sandbox\n`);
+    for (const client of [dev, bundled]) {
+      const r = await call(client, "migrate_catalog", { repoPath: suite("brewbox-store"), envFiles: [envFile] });
+      assert.ok(!r.isError, r.content[0]?.text);
+      assert.match(r.content[0].text, /dry run[\s\S]*3 products would be created/);
+      const data = json(r);
+      assert.equal(data.counts.wouldCreate, 3);
+      assert.ok(!JSON.stringify(data).includes("sk_test_standin_brewbox"), "setting values are never returned");
+    }
+    fs.writeFileSync(envFile, "STRIPE_SECRET_KEY=sk_live_nope\n");
+    const live = await call(dev, "migrate_catalog", { repoPath: suite("brewbox-store"), envFiles: [envFile] });
+    assert.equal(live.isError, true);
+    assert.match(live.content[0].text, /test keys/);
+  } finally {
+    await standin.close();
+  }
+});
+
 test("the bundled plugin server works on its own, with the map embedded", async () => {
   const { tools } = await bundled.listTools();
-  assert.deepEqual(tools.map((t) => t.name).sort(), ["plan_migration", "scan_payment_surface"]);
+  assert.deepEqual(tools.map((t) => t.name).sort(), TOOLS);
+  const refCode = await call(bundled, "get_reference_code", { name: "paypal-money" });
+  assert.match(refCode.content[0].text, /export function toPayPalMoney/);
   const plan = json(await call(bundled, "plan_migration", { repoPath: suite("brewbox-store") }));
   assert.equal(plan.status, "ready");
   assert.equal(plan.events[0].paypal, "PAYMENT.CAPTURE.COMPLETED");

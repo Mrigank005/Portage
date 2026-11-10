@@ -195,6 +195,9 @@ function findClientSide(files: string[], textOf: (rel: string) => string | null)
   return out;
 }
 
+/** A "use client" directive before any code (comments allowed). */
+const USE_CLIENT = /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*["']use client["']/;
+
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Where the UI starts a checkout: forms, links and fetch calls that target a checkout route. */
@@ -220,7 +223,7 @@ function findTriggers(files: string[], textOf: (rel: string) => string | null, c
           const tag = line.lastIndexOf("<", m.index);
           const from =
             tag >= 0 && m.index - tag < 120 ? tag : line.trimEnd().length <= 120 ? 0 : line.lastIndexOf(" ", Math.max(0, m.index - 40)) + 1;
-          out.push({ file, line: i + 1, target: routeLabel(route), snippet: clip(line.slice(from), 120) });
+          out.push({ file, line: i + 1, target: routeLabel(route), snippet: clip(line.slice(from), 120), clientComponent: USE_CLIENT.test(text) });
         }
       });
     }

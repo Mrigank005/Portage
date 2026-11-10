@@ -21,6 +21,19 @@ All lookups use `language=typescript` and `key=paypal`.
 | 11 | `model_search` | `PaypalWalletExperienceContext` | `returnUrl`, `cancelUrl`, `shippingPreference`, `locale`, `userAction`. | `success_url`, `cancel_url`, `locale` and `shipping_address_collection` rules (NO_SHIPPING unless the session collects an address) |
 | 12 | `model_search` | `RefundRequest` | `amount` (`Money`), `customId`, `invoiceId`, `noteToPayer`. | Partial refunds send `amount` from the money helper |
 
+## 2026-11-10 and 11: reference code and the Brewbox run (Phase 3)
+
+| # | Tool | Query | What it confirmed | Where it went |
+|---|---|---|---|---|
+| 13 | `model_search` | `PaypalWalletContextShippingPreference` | Values `GET_FROM_FILE`, `NO_SHIPPING`, `SET_PROVIDED_ADDRESS`. | Create-order route: `NO_SHIPPING` unless the Stripe session collects an address |
+| 14 | `model_search` | `CaptureStatus` | Values `COMPLETED`, `DECLINED`, `PARTIALLY_REFUNDED`, `PENDING`, `REFUNDED`, `FAILED`. | Capture route: fulfil only on `COMPLETED`, leave `PENDING` to the webhook |
+| 15 | `model_search` | `PaymentSource` | `paypal` (`PaypalWallet`) carries the experience context and the payer's email. | Reading the buyer's email for the receipt |
+| 16 | `model_search` | `SellerPayableBreakdown` | `totalRefundedAmount`: the running refunded total on a `Refund`. | Closed the gap the plan had flagged: Stripe's `amount_refunded` maps to it, so refunds are recorded once even when the refund route and the webhook both report them |
+| 17 | `model_search` | `Money` | `currencyCode` and `value`; `value` is an integer string for currencies like JPY. | Reference money helper |
+| 18 | `ask` (twice) | How to initialise the client with client credentials for the sandbox | **Failed** with a server error on 2026-11-11. | The client setup comes from the official code sample `endpoint_search createOrder` returned (#2): `clientCredentialsAuthCredentials`, `Environment.Sandbox` |
+
+The reference code (`packages/core/reference`) is typechecked against `@paypal/paypal-server-sdk` 2.5, so any name these lookups got wrong would fail the build. None did.
+
 Currency rules (which currencies PayPal accepts and which take no decimals) come from PayPal's own [currency codes page](https://developer.paypal.com/api/rest/reference/currency-codes/) and Stripe's [currencies page](https://docs.stripe.com/currencies), both read on 2026-11-10. They are not SDK facts, so they aren't ContextMatic lookups.
 
 ## Inside Portage

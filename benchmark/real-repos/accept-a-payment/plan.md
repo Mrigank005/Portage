@@ -4,7 +4,7 @@ Source: https://github.com/stripe-samples/accept-a-payment at commit `1a57c3b2f5
 
 **Mode:** add PayPal alongside Stripe · **App:** prebuilt-checkout-page/server/nextjs (Next.js 16.2.11 (App Router)) · **Status:** ready for approval
 
-3 new routes · 6 new files · 3 changed files · 5 new settings · 2 items to review · 0 blockers
+3 new routes · 7 new files · 3 changed files · 5 new settings · 2 items to review · 0 blockers
 
 ## Steps
 
@@ -19,35 +19,41 @@ Source: https://github.com/stripe-samples/accept-a-payment at commit `1a57c3b2f5
 3. **Create the PayPal client and the money helper** (`prebuilt-checkout-page/server/nextjs/lib/paypal.ts`, `prebuilt-checkout-page/server/nextjs/lib/paypal-money.ts`)
    - `prebuilt-checkout-page/server/nextjs/lib/paypal.ts`: one shared SDK client (client credentials from the environment, sandbox unless PAYPAL_ENVIRONMENT says otherwise) with the Orders and Payments controllers, next to `prebuilt-checkout-page/server/nextjs/lib/stripe.ts`.
    - `prebuilt-checkout-page/server/nextjs/lib/paypal-money.ts`: converts the app's integer minor units to PayPal's decimal strings and back (2400 → "24.00"; JPY stays whole). It refuses amounts PayPal can't represent instead of rounding (HUF and TWD take no decimals on PayPal). Portage's own tested helper is the reference.
-   - Also a small helper for the webhook verification call, which is a REST call: the Server SDK has no webhook methods (confirmed through ContextMatic).
+   - Start from Portage's reference code: get_reference_code `paypal-client`, get_reference_code `paypal-money`
    - ContextMatic first: ask `How do I configure the PayPal Server SDK client with client credentials for the sandbox environment?`; model_search `Money`
 4. **Add `POST /api/paypal/orders`** (`prebuilt-checkout-page/server/nextjs/app/api/paypal/orders/route.ts`)
    - Mirror the Stripe checkout (`POST /api/create-checkout-session`, prebuilt-checkout-page/server/nextjs/app/api/create-checkout-session/route.ts:8): same input validation, same app record (the app's order record), then `ordersController.createOrder` instead of `checkout.sessions.create`.
    - Read each price on the server exactly as the Stripe route does (from Stripe), never from the browser.
    - intent `CAPTURE`; items with `quantity` as a string; `amount.breakdown.itemTotal` equal to the sum of the items, and `amount.value` equal to that (PayPal rejects the order otherwise). Amounts go through the money helper.
    - `customId` ← the app's own order ID, so the webhook can find the record.
+   - Set `paymentSource.paypal.experienceContext.returnUrl` and `cancelUrl` to the same pages as the Stripe session's success and cancel URLs (`${domainURL}/success?session_id={CHECKOUT_SESSION_ID}`, `${domainURL}/canceled`), with the app's order ID in place of `{CHECKOUT_SESSION_ID}`. They are required whenever an experience context is sent: without them PayPal shows "Things don't appear to be working at the moment" after the buyer logs in.
    - `shippingPreference` `NO_SHIPPING` (the Stripe session doesn't collect an address).
    - Send `paypalRequestId` (PayPal-Request-Id) so a retried request can't create a second order.
    - Store the PayPal order ID on the app's record.
-   - Return the PayPal order ID as JSON; the buttons need it.
+   - Answer `{ orderId }` as JSON: the buttons call this route to start the payment. For a bad request answer 400 with `{ error }`, a message the buyer can read.
    - ContextMatic first: endpoint_search `createOrder`; model_search `OrderRequest`; model_search `PurchaseUnitRequest`; model_search `ItemRequest`; model_search `AmountWithBreakdown`; model_search `PaypalWalletExperienceContext`
 5. **Add `POST /api/paypal/orders/[orderId]/capture`** (`prebuilt-checkout-page/server/nextjs/app/api/paypal/orders/[orderId]/capture/route.ts`)
    - Capture with `ordersController.captureOrder`, sending a PayPal-Request-Id.
    - Only treat it as paid when the order status is `COMPLETED` and the capture status is `COMPLETED`; check the captured amount and currency against the app's own record.
    - Then fulfil with the app's fulfilment code, recording `paymentProvider: "paypal"`, the PayPal order ID and the capture ID (`purchaseUnits[0].payments.captures[0].id`).
    - Send the browser to the same success page Stripe uses (`${domainURL}/success?session_id={CHECKOUT_SESSION_ID}`). It has no PayPal equivalent for `{CHECKOUT_SESSION_ID}`, so pass the app's own order ID.
+   - Answer `{ redirectUrl }` (the buttons go there), or a 4xx/5xx with `{ error }` that the buttons show. Log failures with PayPal's debug_id.
    - ContextMatic first: endpoint_search `captureOrder`; model_search `Order`
-6. **Add `POST /api/paypal/webhook`** (`prebuilt-checkout-page/server/nextjs/app/api/paypal/webhook/route.ts`)
-   - Verify every event with `POST /v1/notifications/verify-webhook-signature` (PAYPAL_WEBHOOK_ID plus the PAYPAL-TRANSMISSION-ID, -TIME, -SIG, PAYPAL-CERT-URL and PAYPAL-AUTH-ALGO headers) and answer 400 when it fails, like the Stripe handler does for a bad signature.
+6. **Add `POST /api/paypal/webhook`** (`prebuilt-checkout-page/server/nextjs/lib/paypal-webhook.ts`, `prebuilt-checkout-page/server/nextjs/app/api/paypal/webhook/route.ts`)
+   - Verify every event with `verifyPayPalWebhook(headers, rawBody)` from the `paypal-webhook` reference before anything else (it calls `POST /v1/notifications/verify-webhook-signature` with PAYPAL_WEBHOOK_ID and the five PAYPAL-* transmission headers), and answer 400 when it fails, like the Stripe handler does for a bad signature.
+   - Read the body with `await request.text()`: PayPal checks the signature over the exact bytes it sent.
    - `PAYMENT.CAPTURE.COMPLETED` (was `checkout.session.completed`): update the app's record.
    - Find the app's record by `custom_id`, or by the stored PayPal order or capture ID. Make every branch idempotent: PayPal retries deliveries.
    - Register the webhook URL in the PayPal developer dashboard (or through the PayPal API) for these event types; its ID is PAYPAL_WEBHOOK_ID.
+   - Start from Portage's reference code: get_reference_code `paypal-webhook`
    - ContextMatic first: ask `Does the PayPal Server SDK include a method to verify webhook signatures?`
 7. **Show PayPal buttons next to the existing checkout** (`prebuilt-checkout-page/server/nextjs/app/PayPalButtons.tsx`, `prebuilt-checkout-page/server/nextjs/app/CheckoutButton.tsx`)
    - prebuilt-checkout-page/server/nextjs/app/CheckoutButton.tsx:13 starts checkout (`POST /api/create-checkout-session`): `form.action = "/api/create-checkout-session";`
-   - Create `prebuilt-checkout-page/server/nextjs/app/PayPalButtons.tsx`, a client component using `@paypal/react-paypal-js` (`PayPalScriptProvider`, `PayPalButtons`) that calls `POST /api/paypal/orders` in `createOrder` and `POST /api/paypal/orders/{id}/capture` in `onApprove`.
+   - Create `prebuilt-checkout-page/server/nextjs/app/PayPalButtons.tsx` from the `PayPalButtons` reference (PayPal JS SDK v6 through `@paypal/react-paypal-js/sdk-v6`). Wrap the page section once in `PayPalCheckoutProvider` with the public client ID (from `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, since the page is a client component), and put `PayPalCheckoutButton` beside the existing button with `createOrderUrl="/api/paypal/orders"`, `captureOrderUrl="/api/paypal/orders/{orderId}/capture"` and the existing form's id as `formId` (give the form an id if it has none).
    - Keep the existing Stripe button exactly as it is.
-   - onCancel returns to the page the buyer was on, like Stripe's cancel_url.
+   - Cancelling leaves the buyer on the same page, like Stripe's cancel_url.
+   - PayPal opens a popup: if the app sends a `Cross-Origin-Opener-Policy` header (Helmet sends `same-origin` by default), use `same-origin-allow-popups` on pages with PayPal buttons, as PayPal's v6 samples do.
+   - Start from Portage's reference code: get_reference_code `PayPalButtons`
 8. **Prove it with a real PayPal sandbox payment**
    - Typecheck and build the app.
    - Run verify_checkout: buy something with the PayPal sandbox buyer, check the order is marked paid by the capture route and by the webhook, then refund it and check the order shows the refund.
@@ -61,6 +67,7 @@ Source: https://github.com/stripe-samples/accept-a-payment at commit `1a57c3b2f5
 | create | `prebuilt-checkout-page/server/nextjs/lib/paypal-money.ts` | Minor units ↔ PayPal decimal strings |
 | create | `prebuilt-checkout-page/server/nextjs/app/api/paypal/orders/route.ts` | POST /api/paypal/orders |
 | create | `prebuilt-checkout-page/server/nextjs/app/api/paypal/orders/[orderId]/capture/route.ts` | POST /api/paypal/orders/[orderId]/capture |
+| create | `prebuilt-checkout-page/server/nextjs/lib/paypal-webhook.ts` | PayPal webhook verification (a REST call: the SDK has no webhook methods) |
 | create | `prebuilt-checkout-page/server/nextjs/app/api/paypal/webhook/route.ts` | POST /api/paypal/webhook |
 | create | `prebuilt-checkout-page/server/nextjs/app/PayPalButtons.tsx` | PayPal buttons (client component) |
 | change | `prebuilt-checkout-page/server/nextjs/package.json` | PayPal dependencies |
@@ -87,7 +94,7 @@ Source: https://github.com/stripe-samples/accept-a-payment at commit `1a57c3b2f5
 - `PAYPAL_CLIENT_SECRET`: Server only. Never sent to the browser or committed
 - `PAYPAL_ENVIRONMENT`: sandbox or live
 - `PAYPAL_WEBHOOK_ID`: ID of the webhook registered for this app; used to verify webhooks
-- `NEXT_PUBLIC_PAYPAL_CLIENT_ID`: Same client ID, exposed to the browser for the buttons (it is public)
+- `NEXT_PUBLIC_PAYPAL_CLIENT_ID`: Same client ID, for buttons in client components (it is public)
 
 **Catalog:** Not needed: Stripe stays the source of prices, and one-time PayPal orders carry their own item names and amounts.
 
