@@ -31,3 +31,9 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/mcp.json
+
+# Local state and caches
+.standin/
+.cache/
+suite/*/data/
+next-env.d.ts

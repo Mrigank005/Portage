@@ -1,0 +1,24 @@
+{
+  "name": "@portage/standin",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Standin: a local Stripe-compatible test server for Portage's test suite.",
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "qs": "^6.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/qs": "^6.15.1",
+    "ajv": "^8.20.0",
+    "stripe": "^23.1.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "portage-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Portage: adds PayPal to apps that use Stripe, and proves it with a real PayPal sandbox payment.",
+  "workspaces": [
+    "packages/standin",
+    "suite/brewbox-store",
+    "suite/quill-saas"
+  ],
+  "scripts": {
+    "standin": "tsx packages/standin/src/cli.ts --config suite/standin.config.json",
+    "test": "npm test -w packages/standin",
+    "suite:e2e": "node scripts/suite-e2e.mjs",
+    "setup:check": "node --env-file=.env scripts/check-setup.mjs"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

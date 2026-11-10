@@ -1,0 +1,26 @@
+{
+  "webhookSecret": "whsec_standin",
+  "accounts": {
+    "sk_test_standin_brewbox": {
+      "webhookEndpoints": [
+        {
+          "url": "http://127.0.0.1:4300/api/webhooks/stripe",
+          "enabledEvents": ["checkout.session.completed", "charge.refunded"]
+        }
+      ],
+      "products": [
+        { "slug": "house-blend", "name": "House Blend Beans, 1 lb", "description": "Medium roast whole beans", "cents": 1800, "metadata": { "portage_sample": "brewbox" } },
+        { "slug": "ethiopia-12oz", "name": "Single Origin Ethiopia, 12 oz", "description": "Light roast, floral notes", "cents": 2400, "metadata": { "portage_sample": "brewbox" } },
+        { "slug": "pour-over-kit", "name": "Pour-Over Starter Kit", "description": "Dripper, filters and a scale", "cents": 4900, "metadata": { "portage_sample": "brewbox" } }
+      ]
+    },
+    "sk_test_standin_quill": {
+      "webhookEndpoints": [
+        {
+          "url": "http://127.0.0.1:4301/webhooks/stripe",
+          "enabledEvents": ["checkout.session.completed", "charge.refunded"]
+        }
+      ]
+    }
+  }
+}
