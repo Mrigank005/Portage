@@ -11,16 +11,8 @@ Every coding agent we develop with is configured to load ContextMatic from this 
 | Claude Code | [`.mcp.json`](../.mcp.json) |
 | Cursor | [`.cursor/mcp.json`](../.cursor/mcp.json) |
 | VS Code / GitHub Copilot | [`.vscode/mcp.json`](../.vscode/mcp.json) |
-| Codex | `~/.codex/config.toml` (see below) |
 
 [`AGENTS.md`](../AGENTS.md) (also loaded by Claude Code through [`CLAUDE.md`](../CLAUDE.md)) makes ContextMatic lookups mandatory before any PayPal Server SDK code is written, and asks for the lookups to be listed in each pull request.
-
-Codex reads MCP servers from its user configuration. Add:
-
-```toml
-[mcp_servers.context-matic]
-url = "https://chatbotapi.apimatic.io/mcp/plugins"
-```
 
 The first time an agent connects, ContextMatic asks you to sign in through your browser. No APIMatic credentials are needed for the PayPal SDK.
 

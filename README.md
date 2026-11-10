@@ -31,11 +31,27 @@ AI coding agents should make this easy, but they guess at payment APIs. PayPal's
 
 ### Supported in the first release
 
-- Node.js and TypeScript apps on Next.js (App Router and Pages Router) and Express
+- Node.js and TypeScript apps on Next.js (App Router; Pages Router planned) and Express
 - Stripe Checkout one-time payments, webhooks, refunds, products and prices
-- Tested in Claude Code and Codex; setup files for Cursor and GitHub Copilot (best effort)
+- Tested in Claude Code and GitHub Copilot (VS Code agent mode); setup files for Cursor (best effort)
+- No Stripe account needed to try it: the test apps run against Standin (below)
 
 Saved cards and existing subscribers can't be moved by code, and Portage says so in its report rather than attempting it.
+
+## Why there's a fake Stripe in here *(in development)*
+
+Portage is built in India, where Stripe is currently invite-only. Our invite hasn't arrived yet. Rather than wait by the letterbox, we wrote **Standin**: a small local server that speaks just enough of the Stripe API for our test apps.
+
+- The test apps use the **official `stripe` Node SDK**, unmodified, pointed at `localhost` instead of Stripe.
+- Standin serves a simple test checkout page and sends webhooks signed the same way Stripe signs them, so the SDK's own signature check passes.
+- Its responses are checked against Stripe's public OpenAPI specification, so the shapes are real rather than guessed.
+- It covers only what the test apps use: products, prices, Checkout sessions, refunds and their webhooks.
+
+On your own repo, none of this applies. Portage reads your code, and catalog migration uses your project's real Stripe keys. Standin exists only so the test suite runs anywhere, and as a bonus, you don't need a Stripe account to try Portage. We also scan real open-source apps that use Stripe, so the results aren't limited to code we wrote ourselves.
+
+For the record, PayPal's sandbox worked from India on the first try.
+
+Details: [docs/standin.md](docs/standin.md).
 
 ## Built with the APIMatic Context Plugin
 
@@ -52,6 +68,7 @@ Details: [docs/apimatic-context-plugin.md](docs/apimatic-context-plugin.md).
 packages/core        scanner, Stripe→PayPal mapping, planner, report builder
 packages/mcp-server  Portage MCP tools
 packages/cli         `portage init` (per-agent setup) and `portage report`
+packages/standin     Standin, the local Stripe-compatible test server
 plugin/              skill and agent configuration
 suite/               small test apps used to evaluate Portage
 apps/website         project website with setup prompts and benchmark results
@@ -60,7 +77,7 @@ apps/webhook-relay   forwards PayPal sandbox webhooks to apps running locally
 
 ## Getting started
 
-Setup prompts and run instructions will be added here as the first release comes together. You will need Node.js 20+, a PayPal developer account with sandbox credentials, and a supported coding agent. See [`.env.example`](.env.example) for the configuration Portage will read.
+Setup prompts and run instructions will be added here as the first release comes together. You will need Node.js 20+, a PayPal developer account with sandbox credentials, and a supported coding agent. You won't need a Stripe account. See [`.env.example`](.env.example) for the configuration Portage will read.
 
 ## License
 

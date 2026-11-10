@@ -1,6 +1,6 @@
 # Working on Portage
 
-Instructions for any AI coding agent (Claude Code, Codex, Cursor, Copilot) working in this repository.
+Instructions for any AI coding agent (Claude Code, GitHub Copilot, Cursor) working in this repository.
 
 ## Project
 
@@ -26,3 +26,5 @@ Record the lookups behind each change in the pull request description under a "C
 - Stripe amounts are integer minor units (`2400`); PayPal amounts are decimal strings (`"24.00"`). Zero-decimal currencies such as JPY stay whole. Convert in one shared helper.
 - Use the `PayPal-Request-Id` header for idempotent PayPal calls.
 - Verify PayPal webhooks with the verify-webhook-signature API before trusting them.
+- Suite apps talk to **Standin** (`STRIPE_API_BASE`), never to real Stripe. Standin must stay compatible with the official `stripe` Node SDK: response shapes from Stripe's public OpenAPI spec, and the same `Stripe-Signature` webhook scheme. Don't change a suite app to work around a Standin gap; fix Standin. See `docs/standin.md`.
+- Never claim results were verified against live Stripe. Reports, docs and the website say the suite runs on Standin.
