@@ -33,7 +33,7 @@ setMap(map as PaymentMap);
 export const VERSION = "0.1.0";
 
 const INSTRUCTIONS = `Portage adds PayPal to apps that take payments with Stripe, and proves the result with a real PayPal sandbox payment.
-Workflow: scan_payment_surface, then plan_migration, then show the plan to the developer and wait for approval before editing anything. The full playbook is the "migrate" prompt.
+Workflow: scan_payment_surface, then plan_migration, then show the plan to the developer and wait for approval before editing anything. Edit only the app the plan is for; never edit Portage's own repository (its suite/ apps, packages/ or tests): "npx portage try <app>" makes a copy in trial/ to work on. The full playbook is the "migrate" prompt.
 While editing, start from get_reference_code where a plan step names it, and look up every PayPal Server SDK method and model with the context-matic MCP server (APIMatic Context Plugin) first.
 After editing, run setup_webhook_relay once (it registers a PayPal sandbox webhook for the app and writes its settings), restart the app, then verify_checkout: a real sandbox payment in a browser, the webhooks, and a refund. Fix the first failing step and run it again until it passes.
 scan_payment_surface, plan_migration and get_reference_code only read. migrate_catalog is a dry run unless dryRun is false.`;

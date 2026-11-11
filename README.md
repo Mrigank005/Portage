@@ -29,13 +29,13 @@ Scan and plan only read code; they never change files and never read real env fi
 ### Two modes
 
 - **Add PayPal alongside Stripe** (default): cards stay on Stripe; PayPal, Venmo and Pay Later appear at checkout and flow into the app's existing orders and fulfilment code.
-- **Replace Stripe**: the same engine plus a removal step.
+- **Replace Stripe**: new payments go through PayPal only. The Stripe catalog is copied to PayPal (`migrate_catalog`), the Stripe checkout is removed, and Stripe stays only to refund orders it already took. A headless agent did this to Brewbox from one prompt and passed `verify_checkout` on its first run ([the run](benchmark/runs/brewbox-replace-agent-run/README.md)).
 
 ### Supported in the first release
 
 - Node.js apps in TypeScript or JavaScript on Next.js and Express (the Next.js Pages Router is scanned and planned, but not yet in the tested set)
 - Stripe Checkout one-time payments, webhooks, refunds, products and prices
-- Tested in Claude Code and GitHub Copilot (VS Code agent mode); setup files for Cursor (best effort)
+- Tested in Claude Code ([Quill](benchmark/runs/quill-agent-run/README.md), [Brewbox, replace mode](benchmark/runs/brewbox-replace-agent-run/README.md)) and GitHub Copilot in VS Code agent mode ([Quill](benchmark/runs/quill-copilot-run/README.md)); setup files for Cursor (not yet run)
 - No Stripe account needed to try it: the test apps run against Standin (below)
 
 Saved cards and existing subscribers can't be moved by code, and Portage says so in its report rather than attempting it.
@@ -114,7 +114,7 @@ Leave everything else as it is. The keys stay on your machine; Portage never pri
 **Then open the Portage folder in your agent** and paste the prompt:
 
 - **Claude Code:** approve the project's MCP servers (`portage` and `context-matic`) when asked, and sign in to context-matic (APIMatic's Context Plugin, free) with `/mcp`. The playbook is the `portage-migrate` skill.
-- **GitHub Copilot:** open Copilot Chat in **Agent** mode and start the two servers from `.vscode/mcp.json` when VS Code offers. The playbook is the `/mcp.portage.migrate` prompt.
+- **GitHub Copilot:** open Copilot Chat in **Agent** mode and start the two servers from `.vscode/mcp.json` when VS Code offers. Paste the prompt as your message: Copilot loads the `portage-migrate` skill by itself. (The `/mcp.portage.migrate` prompt holds the same playbook, but on its own it doesn't say which app or where its settings are.)
 - **Cursor:** enable the two servers in *Settings → MCP*. The playbook is the `migrate` prompt.
 
 The agent scans the app, shows its plan, writes the PayPal integration with ContextMatic lookups and Portage's reference code, registers a PayPal sandbox webhook through Portage's relay, then runs `verify_checkout`: a real sandbox payment in a headless browser, PayPal's real webhooks, a forged one that must be rejected, and a refund. It fixes what fails and reports a report card. `cd trial/quill-saas && git diff` shows every change.

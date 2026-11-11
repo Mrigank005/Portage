@@ -1,0 +1,64 @@
+{
+  "about": "Written by Portage migrate_catalog. Maps Stripe products to PayPal catalog products. PayPal catalog products have no one-time prices, so prices are kept here, already converted to PayPal amounts.",
+  "paypalEnvironment": "sandbox",
+  "products": [
+    {
+      "stripeProductId": "prod_bjhsihtnm4Jm4C",
+      "paypalProductId": "PROD-0NW04674T57684713",
+      "name": "Pour-Over Starter Kit",
+      "description": "Dripper, filters and a scale",
+      "type": "PHYSICAL",
+      "prices": [
+        {
+          "stripePriceId": "price_AwlSUnHDzUeKk5RwM4ch9263",
+          "unitAmount": 4900,
+          "currency": "usd",
+          "paypal": {
+            "currencyCode": "USD",
+            "value": "49.00"
+          },
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "stripeProductId": "prod_Rlnt0xOkNdhis5",
+      "paypalProductId": "PROD-94A46070D74816609",
+      "name": "Single Origin Ethiopia, 12 oz",
+      "description": "Light roast, floral notes",
+      "type": "PHYSICAL",
+      "prices": [
+        {
+          "stripePriceId": "price_AGsNOq2NhlJoQmTlaVkCxYKA",
+          "unitAmount": 2400,
+          "currency": "usd",
+          "paypal": {
+            "currencyCode": "USD",
+            "value": "24.00"
+          },
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "stripeProductId": "prod_Xj37mgQqzs3BOK",
+      "paypalProductId": "PROD-2UV35169G9085001E",
+      "name": "House Blend Beans, 1 lb",
+      "description": "Medium roast whole beans",
+      "type": "PHYSICAL",
+      "prices": [
+        {
+          "stripePriceId": "price_tOIC4ym19EdNkVkxrg5KWEAd",
+          "unitAmount": 1800,
+          "currency": "usd",
+          "paypal": {
+            "currencyCode": "USD",
+            "value": "18.00"
+          },
+          "isDefault": true
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

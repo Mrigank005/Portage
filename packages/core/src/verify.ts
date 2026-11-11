@@ -180,6 +180,9 @@ async function paypalHasEvent(id: string, secret: string, eventType: string, res
   }
 }
 
+/** Playwright's text match ignores case, so "paid" would also match a "Paid" column header. Match exactly as written. */
+const caseSensitive = (text: string) => new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
 function captureOf(order: Order) {
   const c = order.purchaseUnits?.[0]?.payments?.captures?.[0];
   return c ? { id: c.id ?? null, status: (c.status as string | undefined) ?? null, amount: c.amount ? `${c.amount.value} ${c.amount.currencyCode}` : null } : null;
@@ -249,9 +252,15 @@ export async function verifyCheckout(opts: VerifyOptions): Promise<VerifyResult>
   try {
     // 1. The app is up.
     const checkoutUrl = `${appUrl}${opts.checkoutPath ?? "/"}`;
-    const ping = await fetch(checkoutUrl, { signal: AbortSignal.timeout(30_000) }).then((r) => r.status, (e) => firstLine(e));
+    // An agent often starts or restarts the app just before calling this, so give it up to 30 seconds to come up.
+    let ping: number | string = "no answer";
+    for (const until = Date.now() + 30_000; ; ) {
+      ping = await fetch(checkoutUrl, { signal: AbortSignal.timeout(30_000) }).then((r) => r.status, (e) => firstLine(e));
+      if ((typeof ping === "number" && ping < 500) || Date.now() > until) break;
+      await sleep(1000);
+    }
     if (typeof ping !== "number" || ping >= 500) {
-      step("App is running", "fail", `${checkoutUrl} answered ${ping}. Start the app first.`);
+      step("App is running", "fail", `${checkoutUrl} answered ${ping} for 30 seconds. Start the app first, and check its terminal for errors.`);
       return result;
     }
     step("App is running", "pass", `${checkoutUrl} answered HTTP ${ping}`);
@@ -283,7 +292,7 @@ export async function verifyCheckout(opts: VerifyOptions): Promise<VerifyResult>
     const page = await context.newPage();
     const consoleErrors: string[] = [];
     page.on("console", (m) => {
-      if (m.type() === "error") consoleErrors.push(m.text().slice(0, 200));
+      if (m.type() === "error") consoleErrors.push(m.text().split("\n")[0].slice(0, 200));
     });
     page.on("pageerror", (e) => consoleErrors.push(firstLine(e)));
     await page.goto(checkoutUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
@@ -320,15 +329,30 @@ export async function verifyCheckout(opts: VerifyOptions): Promise<VerifyResult>
       step("PayPal checkout opens", "fail", `Clicking the button opened no PayPal window.${consoleErrors.length ? ` Browser console errors: ${consoleErrors.slice(0, 3).join(" | ")}` : " Check that the create-order route returns the PayPal order ID."}`);
       return result;
     }
-    // The order ID is the token in PayPal's checkout URL.
-    for (let i = 0; i < 60 && !result.paypalOrderId; i++) {
-      result.paypalOrderId = new URL(paypalPage.url()).searchParams.get("token");
+    // The order ID is the token in PayPal's checkout URL. PayPal opens the popup blank and closes it again if the app's
+    // create-order route fails, so read the URL defensively.
+    const tokenOf = (u: string) => {
+      try {
+        return new URL(u).searchParams.get("token");
+      } catch {
+        return null;
+      }
+    };
+    for (let i = 0; i < 60 && !result.paypalOrderId && !paypalPage.isClosed(); i++) {
+      result.paypalOrderId = tokenOf(paypalPage.url());
       if (!result.paypalOrderId) await sleep(500);
     }
     await paypalPage.waitForLoadState("domcontentloaded").catch(() => undefined);
     if (!result.paypalOrderId) {
-      await shot(paypalPage, "paypal-window");
-      step("PayPal checkout opens", "fail", `A ${paypalPage === page ? "redirect" : "popup"} opened, but PayPal's URL carried no order ID (${new URL(paypalPage.url()).host}).`);
+      // Say what the checkout page itself shows: an app usually puts the create-order error next to the button.
+      const shown = (await page.locator("[role=alert], .paypal-error, .error").allInnerTexts().catch(() => [] as string[])).map((t) => t.trim()).filter(Boolean);
+      if (!paypalPage.isClosed()) await shot(paypalPage, "paypal-window");
+      await shot(page, "checkout-after-click");
+      step(
+        "PayPal checkout opens",
+        "fail",
+        `${paypalPage === page ? "The page" : "PayPal's popup"} ${paypalPage.isClosed() ? "closed again" : "opened"} without an order ID, so the app's create-order route probably failed.${shown.length ? ` The page shows: "${shown.join(" | ").slice(0, 200)}".` : ""} If the checkout form needs a field (an email, say), pass it with \`fill\`.${consoleErrors.length ? ` Browser console errors: ${consoleErrors.slice(-3).join(" | ")}` : ""}`,
+      );
       return result;
     }
     const created = await sdk.orders.getOrder({ id: result.paypalOrderId }).then((r) => r.result, (e) => e);
@@ -383,7 +407,7 @@ export async function verifyCheckout(opts: VerifyOptions): Promise<VerifyResult>
     await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
     await sleep(1500);
     if (opts.paidText) {
-      const seen = await page.getByText(opts.paidText, { exact: false }).first().waitFor({ state: "visible", timeout: 30_000 }).then(() => true, () => false);
+      const seen = await page.getByText(caseSensitive(opts.paidText)).first().waitFor({ state: "visible", timeout: 30_000 }).then(() => true, () => false);
       await shot(page, "after-payment");
       step("App shows the order as paid", seen ? "pass" : "fail", seen ? `"${opts.paidText}" on ${where(page.url())}` : `"${opts.paidText}" didn't appear on ${where(page.url())} within 30s`);
     } else {
@@ -437,7 +461,7 @@ export async function verifyCheckout(opts: VerifyOptions): Promise<VerifyResult>
         let seen = false;
         for (let i = 0; i < 3 && !seen; i++) {
           await page.reload({ waitUntil: "domcontentloaded" }).catch(() => undefined);
-          seen = await page.getByText(opts.refundedText, { exact: false }).first().waitFor({ state: "visible", timeout: 10_000 }).then(() => true, () => false);
+          seen = await page.getByText(caseSensitive(opts.refundedText)).first().waitFor({ state: "visible", timeout: 10_000 }).then(() => true, () => false);
         }
         await shot(page, "after-refund");
         step("App shows the order as refunded", seen ? "pass" : "fail", seen ? `"${opts.refundedText}" on ${where(page.url())}` : `"${opts.refundedText}" didn't appear after the refund webhook`);

@@ -135,12 +135,22 @@ export interface TrialResult {
   promptFile: string;
 }
 
-export function trialPrompt(app: TrialApp, dir: string): string {
+export type TrialMode = "add" | "replace";
+
+export function trialPrompt(app: TrialApp, dir: string, mode: TrialMode = "add"): string {
   const a = TRIAL_APPS[app];
   const rel = path.relative(REPO, dir).replace(/\\/g, "/");
-  return `Use Portage to add PayPal to the app in \`${rel}\` (${a.stack}), in add mode, and prove it with a real PayPal sandbox payment.
+  const goal =
+    mode === "add"
+      ? `Use Portage to add PayPal to the app in \`${rel}\` (${a.stack}), in add mode, and prove it with a real PayPal sandbox payment.`
+      : `Use Portage to move the app in \`${rel}\` (${a.stack}) from Stripe to PayPal, in replace mode: new payments go through PayPal only, and orders already paid with Stripe can still be refunded. Prove it with a real PayPal sandbox payment.`;
+  const replaceNotes =
+    mode === "replace"
+      ? `\n\nReplace mode: run migrate_catalog for the app as the plan says (dry run first, then for real: it creates PayPal sandbox catalog products and writes portage.catalog.json). For the plan's "Needs a person" items, take the plan's own suggestion and list them in the report.`
+      : "";
+  return `${goal}
 
-Follow Portage's playbook: the portage-migrate skill in Claude Code, or the \`migrate\` prompt from the portage MCP server in GitHub Copilot and Cursor. This is a Portage test app, so the plan counts as approved: show it, then carry on without waiting.
+Follow Portage's playbook: the portage-migrate skill in Claude Code, or the \`migrate\` prompt from the portage MCP server in GitHub Copilot and Cursor (mode: ${mode}). This is a Portage test app, so the plan counts as approved: show it, then carry on without waiting.${replaceNotes}
 
 Environment:
 - The app takes card payments through Standin, a local Stripe-compatible server, not real Stripe. If nothing is listening on localhost:4242, start it from the repository root with \`npm run standin\` and leave it running.
@@ -150,7 +160,7 @@ Environment:
 When the edits are done and the app typechecks: run setup_webhook_relay for the app (it writes to ${a.envFile}), restart the app, then run verify_checkout and fix whatever fails until every step passes. Finish with the report, including the verify_checkout report card. The app is a git repository, so \`git diff\` shows everything you changed.`;
 }
 
-export async function setupTrial(app: TrialApp, opts: { dir?: string; force?: boolean; install?: boolean; log?: (m: string) => void } = {}): Promise<TrialResult> {
+export async function setupTrial(app: TrialApp, opts: { dir?: string; force?: boolean; install?: boolean; mode?: TrialMode; log?: (m: string) => void } = {}): Promise<TrialResult> {
   const log = opts.log ?? (() => {});
   const a = TRIAL_APPS[app];
   const src = path.join(REPO, "suite", a.folder);
@@ -193,7 +203,7 @@ export async function setupTrial(app: TrialApp, opts: { dir?: string; force?: bo
   log("Committed a git baseline");
 
 
-  const prompt = trialPrompt(app, dir);
+  const prompt = trialPrompt(app, dir, opts.mode ?? "add");
   const promptFile = path.join(path.dirname(dir), `${a.folder}.prompt.md`);
   fs.writeFileSync(promptFile, prompt + "\n");
   return { app, dir, prompt, promptFile };

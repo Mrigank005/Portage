@@ -1,0 +1,603 @@
+diff --git a/.env.example b/.env.example
+index e568d4e..5d99e38 100644
+--- a/.env.example
++++ b/.env.example
+@@ -8,3 +8,7 @@ PORT=4301
+ HOST=127.0.0.1
+ APP_URL=http://localhost:4301
+ ADMIN_TOKEN=quill-admin
++PAYPAL_CLIENT_ID=your-sandbox-client-id
++PAYPAL_CLIENT_SECRET=your-sandbox-client-secret
++PAYPAL_ENVIRONMENT=sandbox
++PAYPAL_WEBHOOK_ID=your-sandbox-webhook-id
+diff --git a/package.json b/package.json
+index 5b88438..1027c21 100644
+--- a/package.json
++++ b/package.json
+@@ -11,6 +11,7 @@
+     "typecheck": "tsc --noEmit"
+   },
+   "dependencies": {
++    "@paypal/paypal-server-sdk": "^2.1.0",
+     "express": "^5.3.0",
+     "stripe": "^23.1.0"
+   },
+diff --git a/src/db.ts b/src/db.ts
+index 640465f..28431ca 100644
+--- a/src/db.ts
++++ b/src/db.ts
+@@ -11,8 +11,11 @@ export interface Purchase {
+   amount: number;
+   currency: string;
+   status: "pending" | "paid" | "partially_refunded" | "refunded" | "failed";
++  paymentProvider: "stripe" | "paypal" | null;
+   sessionId: string | null;
+   paymentIntentId: string | null;
++  paypalOrderId: string | null;
++  paypalCaptureId: string | null;
+   refundedAmount: number;
+   creditsClawedBack: number;
+   createdAt: string;
+@@ -45,8 +48,11 @@ export function createPurchase(p: Pick<Purchase, "email" | "pack" | "credits" |
+     id: `pur_${randomBytes(5).toString("hex")}`,
+     ...p,
+     status: "pending",
++    paymentProvider: null,
+     sessionId: null,
+     paymentIntentId: null,
++    paypalOrderId: null,
++    paypalCaptureId: null,
+     refundedAmount: 0,
+     creditsClawedBack: 0,
+     createdAt: new Date().toISOString(),
+@@ -58,6 +64,8 @@ export function createPurchase(p: Pick<Purchase, "email" | "pack" | "credits" |
+ 
+ export const getPurchase = (id: string): Purchase | undefined => load().purchases.find((p) => p.id === id);
+ export const findByPaymentIntent = (pi: string): Purchase | undefined => load().purchases.find((p) => p.paymentIntentId === pi);
++export const findByPayPalOrder = (id: string): Purchase | undefined => load().purchases.find((p) => p.paypalOrderId === id);
++export const findByPayPalCapture = (id: string): Purchase | undefined => load().purchases.find((p) => p.paypalCaptureId === id);
+ 
+ export function updatePurchase(id: string, patch: Partial<Purchase>): Purchase | undefined {
+   const data = load();
+diff --git a/src/paypal-money.ts b/src/paypal-money.ts
+new file mode 100644
+index 0000000..74b1985
+--- /dev/null
++++ b/src/paypal-money.ts
+@@ -0,0 +1,53 @@
++export interface PayPalMoney {
++  currencyCode: string;
++  value: string;
++}
++
++const PAYPAL_DECIMALS: Record<string, number> = {
++  AUD: 2, BRL: 2, CAD: 2, CNY: 2, CZK: 2, DKK: 2, EUR: 2, HKD: 2, HUF: 0, ILS: 2, JPY: 0, MYR: 2, MXN: 2,
++  TWD: 0, NZD: 2, NOK: 2, PHP: 2, PLN: 2, GBP: 2, RUB: 2, SGD: 2, SEK: 2, CHF: 2, THB: 2, USD: 2,
++};
++const STRIPE_ZERO = new Set(["BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "VND", "VUV", "XAF", "XOF", "XPF"]);
++const STRIPE_THREE = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
++
++const code = (currency: string): string => {
++  if (!/^[A-Za-z]{3}$/.test(currency)) throw new Error(`"${currency}" is not a currency code`);
++  return currency.toUpperCase();
++};
++const stripeDecimals = (c: string) => (STRIPE_ZERO.has(c) ? 0 : STRIPE_THREE.has(c) ? 3 : 2);
++
++export function toPayPalMoney(minorUnits: number, currency: string): PayPalMoney {
++  if (!Number.isSafeInteger(minorUnits) || minorUnits < 0) throw new Error(`Amount must be a whole number of minor units, got ${minorUnits}`);
++  const c = code(currency);
++  const pp = PAYPAL_DECIMALS[c];
++  if (pp === undefined) throw new Error(`PayPal does not accept payments in ${c}`);
++  const st = stripeDecimals(c);
++  let units = BigInt(minorUnits);
++  if (st > pp) {
++    const factor = 10n ** BigInt(st - pp);
++    if (units % factor !== 0n) throw new Error(`${minorUnits} (${c} minor units) has no exact PayPal amount: PayPal takes ${pp} decimals for ${c}`);
++    units /= factor;
++  } else if (st < pp) units *= 10n ** BigInt(pp - st);
++  return { currencyCode: c, value: format(units, pp) };
++}
++
++export function fromPayPalMoney(money: { currencyCode?: string; currency_code?: string; value?: string }): number {
++  const c = code(money.currencyCode ?? money.currency_code ?? "");
++  const pp = PAYPAL_DECIMALS[c];
++  if (pp === undefined) throw new Error(`PayPal does not accept payments in ${c}`);
++  const m = /^(\d+)(?:\.(\d+))?$/.exec(money.value ?? "");
++  if (!m || (m[2] ?? "").length > pp) throw new Error(`"${money.value}" is not a valid ${c} amount`);
++  const st = stripeDecimals(c);
++  const units = BigInt(m[1] + (m[2] ?? "").padEnd(pp, "0"));
++  const factor = 10n ** BigInt(Math.max(0, pp - st));
++  if (st < pp && units % factor !== 0n) throw new Error(`"${money.value}" ${c} has no exact amount in minor units`);
++  const minor = st >= pp ? units * 10n ** BigInt(st - pp) : units / factor;
++  if (minor > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error(`"${money.value}" is too large`);
++  return Number(minor);
++}
++
++function format(units: bigint, decimals: number): string {
++  if (decimals === 0) return units.toString();
++  const s = units.toString().padStart(decimals + 1, "0");
++  return `${s.slice(0, -decimals)}.${s.slice(-decimals)}`;
++}
+diff --git a/src/paypal-webhook.ts b/src/paypal-webhook.ts
+new file mode 100644
+index 0000000..28e6148
+--- /dev/null
++++ b/src/paypal-webhook.ts
+@@ -0,0 +1,87 @@
++import { randomUUID } from "node:crypto";
++
++export interface PayPalWebhookEvent {
++  id: string;
++  event_type: string;
++  resource: Record<string, unknown> & {
++    id?: string;
++    status?: string;
++    custom_id?: string;
++    amount?: { currency_code?: string; value?: string };
++    supplementary_data?: { related_ids?: { order_id?: string } };
++    seller_payable_breakdown?: { total_refunded_amount?: { currency_code?: string; value?: string } };
++    links?: { href: string; rel: string; method?: string }[];
++  };
++}
++
++export type WebhookVerification = { verified: true; event: PayPalWebhookEvent } | { verified: false; reason: string };
++const HEADERS = ["paypal-transmission-id", "paypal-transmission-time", "paypal-transmission-sig", "paypal-cert-url", "paypal-auth-algo"] as const;
++
++function paypalApiBase(): string {
++  if (process.env.PAYPAL_API_BASE) return process.env.PAYPAL_API_BASE.replace(/\/$/, "");
++  return process.env.PAYPAL_ENVIRONMENT === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
++}
++
++let cached: { token: string; expiresAt: number } | undefined;
++async function paypalAccessToken(): Promise<string> {
++  if (cached && Date.now() < cached.expiresAt) return cached.token;
++  const id = process.env.PAYPAL_CLIENT_ID;
++  const secret = process.env.PAYPAL_CLIENT_SECRET;
++  if (!id || !secret) throw new Error("PayPal is not configured: set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET");
++  const res = await fetch(`${paypalApiBase()}/v1/oauth2/token`, {
++    method: "POST",
++    headers: { Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`, "Content-Type": "application/x-www-form-urlencoded" },
++    body: "grant_type=client_credentials",
++  });
++  if (!res.ok) throw new Error(`PayPal OAuth failed with HTTP ${res.status}`);
++  const data = (await res.json()) as { access_token: string; expires_in: number };
++  cached = { token: data.access_token, expiresAt: Date.now() + Math.max(0, data.expires_in - 60) * 1000 };
++  return data.access_token;
++}
++
++function header(headers: Headers | Record<string, string | string[] | undefined>, name: string): string | undefined {
++  if (typeof (headers as Headers).get === "function") return (headers as Headers).get(name) ?? undefined;
++  const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
++  const value = key ? (headers as Record<string, string | string[] | undefined>)[key] : undefined;
++  return Array.isArray(value) ? value[0] : value;
++}
++
++export async function verifyPayPalWebhook(
++  headers: Headers | Record<string, string | string[] | undefined>,
++  rawBody: string,
++): Promise<WebhookVerification> {
++  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
++  if (!webhookId) return { verified: false, reason: "PAYPAL_WEBHOOK_ID is not set" };
++  const values = HEADERS.map((h) => header(headers, h));
++  if (values.some((v) => !v)) return { verified: false, reason: "missing PayPal transmission headers" };
++  let event: PayPalWebhookEvent;
++  try {
++    event = JSON.parse(rawBody) as PayPalWebhookEvent;
++  } catch {
++    return { verified: false, reason: "body is not JSON" };
++  }
++  if (!event || typeof event.event_type !== "string") return { verified: false, reason: "body is not a PayPal event" };
++  const [transmissionId, transmissionTime, transmissionSig, certUrl, authAlgo] = values as string[];
++  const body = JSON.stringify({
++    auth_algo: authAlgo,
++    cert_url: certUrl,
++    transmission_id: transmissionId,
++    transmission_sig: transmissionSig,
++    transmission_time: transmissionTime,
++    webhook_id: webhookId,
++    webhook_event: event,
++  });
++  const res = await fetch(`${paypalApiBase()}/v1/notifications/verify-webhook-signature`, {
++    method: "POST",
++    headers: { Authorization: `Bearer ${await paypalAccessToken()}`, "Content-Type": "application/json", "PayPal-Request-Id": randomUUID() },
++    body,
++  });
++  if (!res.ok) return { verified: false, reason: `verification call failed with HTTP ${res.status}` };
++  const result = (await res.json()) as { verification_status?: string };
++  return result.verification_status === "SUCCESS" ? { verified: true, event } : { verified: false, reason: `verification_status ${result.verification_status ?? "missing"}` };
++}
++
++export function capturedPaymentIdOfRefund(event: PayPalWebhookEvent): string | undefined {
++  const up = event.resource.links?.find((l) => l.rel === "up" && /\/captures\//.test(l.href));
++  return up ? up.href.split("/captures/")[1]?.split(/[/?]/)[0] : undefined;
++}
+diff --git a/src/paypal.ts b/src/paypal.ts
+new file mode 100644
+index 0000000..6609c2f
+--- /dev/null
++++ b/src/paypal.ts
+@@ -0,0 +1,47 @@
++import { randomUUID } from "node:crypto";
++import { ApiError, Client, CustomError, Environment, OrdersController, PaymentsController } from "@paypal/paypal-server-sdk";
++
++export const paypalEnvironment: "sandbox" | "live" = process.env.PAYPAL_ENVIRONMENT === "live" ? "live" : "sandbox";
++
++let client: Client | undefined;
++
++export function paypalClient(): Client {
++  if (client) return client;
++  const oAuthClientId = process.env.PAYPAL_CLIENT_ID;
++  const oAuthClientSecret = process.env.PAYPAL_CLIENT_SECRET;
++  if (!oAuthClientId || !oAuthClientSecret) {
++    throw new Error("PayPal is not configured: set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET");
++  }
++  client = new Client({
++    clientCredentialsAuthCredentials: { oAuthClientId, oAuthClientSecret },
++    environment: paypalEnvironment === "live" ? Environment.Production : Environment.Sandbox,
++    timeout: 15_000,
++    httpClientOptions: {
++      retryConfig: {
++        maxNumberOfRetries: 2,
++        retryOnTimeout: true,
++        maximumRetryWaitTime: 10,
++        httpMethodsToRetry: ["GET", "PUT", "POST", "PATCH"],
++      },
++    },
++  });
++  return client;
++}
++
++export const ordersApi = (): OrdersController => new OrdersController(paypalClient());
++export const paymentsApi = (): PaymentsController => new PaymentsController(paypalClient());
++export const paypalRequestId = (): string => randomUUID();
++
++export function describePayPalError(err: unknown): string {
++  if (err instanceof ApiError) {
++    const r = (err instanceof CustomError ? err.result : undefined) as
++      | { name?: string; message?: string; debug_id?: string; details?: { issue?: string }[] }
++      | undefined;
++    const debugId = r?.debug_id ?? err.headers?.["paypal-debug-id"] ??
++      (typeof err.body === "string" ? /"debug_id"\s*:\s*"([^"]+)"/.exec(err.body)?.[1] : undefined);
++    const issue = r?.details?.[0]?.issue;
++    const detail = [r?.name, issue ?? r?.message, debugId ? `debug_id ${debugId}` : ""].filter(Boolean).join(" · ");
++    return `PayPal API error ${err.statusCode}${detail ? `: ${detail}` : ""}`;
++  }
++  return err instanceof Error ? err.message : String(err);
++}
+diff --git a/src/server.ts b/src/server.ts
+index e17a9e0..77c3242 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -1,37 +1,52 @@
+-// Quill: sells credit packs for a writing assistant. Express, Stripe Checkout with inline prices, webhooks.
+ import express from "express";
+ import type Stripe from "stripe";
++import { CheckoutPaymentIntent, PaypalWalletContextShippingPreference } from "@paypal/paypal-server-sdk";
+ import { stripe } from "./stripe.js";
+-import { accountFor, addCredits, createPurchase, findByPaymentIntent, getPurchase, updatePurchase } from "./db.js";
++import {
++  accountFor, addCredits, createPurchase, findByPayPalCapture, findByPayPalOrder, findByPaymentIntent,
++  getPurchase, updatePurchase,
++} from "./db.js";
++import { describePayPalError, ordersApi, paymentsApi, paypalRequestId } from "./paypal.js";
++import { fromPayPalMoney, toPayPalMoney } from "./paypal-money.js";
++import { capturedPaymentIdOfRefund, verifyPayPalWebhook, type PayPalWebhookEvent } from "./paypal-webhook.js";
+ 
+ const PORT = Number(process.env.PORT ?? 4301);
+ const HOST = process.env.HOST ?? "127.0.0.1";
+ const BASE_URL = process.env.APP_URL ?? `http://localhost:${PORT}`;
+ const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "quill-admin";
+-
+ const PACKS = {
+   starter: { name: "Starter", credits: 100, cents: 900 },
+   team: { name: "Team", credits: 500, cents: 3900 },
+ } as const;
+ type PackId = keyof typeof PACKS;
+-
+ const money = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+-
+ const page = (title: string, body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+-<style>:root{color-scheme:light dark;--bg:#f6f5fa;--card:#fff;--ink:#1c1a2b;--muted:#625f78;--line:#dedbea;--accent:#4b3fd1}
+-@media (prefers-color-scheme:dark){:root{--bg:#12111c;--card:#1b1a29;--ink:#e9e7f5;--muted:#a09db8;--line:#2d2b42;--accent:#a49dff}}
+-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+-main{max-width:720px;margin:0 auto;padding:40px 16px}h1{font-size:1.8rem;margin:0 0 6px}p.lede{color:var(--muted);margin:0 0 24px}
+-.packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.pack{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px}
+-.pack h2{margin:0;font-size:1.1rem}.price{font-size:1.4rem;font-weight:650}label{font-size:.85rem;color:var(--muted)}
+-input,button{font:inherit;border-radius:8px;border:1px solid var(--line);padding:9px 11px;background:transparent;color:inherit}button{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;cursor:pointer}
+-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.92rem}th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+-a{color:var(--accent)}button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}</style></head><body><main>${body}</main></body></html>`;
++<meta name="paypal-checkout" data-client-id="${esc(process.env.PAYPAL_CLIENT_ID ?? "")}" data-currency="USD" data-create-url="/paypal/orders" data-capture-url="/paypal/orders/{orderId}/capture">
++<style>:root{color-scheme:light dark;--bg:#f6f5fa;--card:#fff;--ink:#1c1a2b;--muted:#625f78;--line:#dedbea;--accent:#4b3fd1}@media (prefers-color-scheme:dark){:root{--bg:#12111c;--card:#1b1a29;--ink:#e9e7f5;--muted:#a09db8;--line:#2d2b42;--accent:#a49dff}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:720px;margin:0 auto;padding:40px 16px}h1{font-size:1.8rem;margin:0 0 6px}p.lede{color:var(--muted);margin:0 0 24px}.packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.pack{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px}.pack h2{margin:0;font-size:1.1rem}.price{font-size:1.4rem;font-weight:650}label{font-size:.85rem;color:var(--muted)}input,button{font:inherit;border-radius:8px;border:1px solid var(--line);padding:9px 11px;background:transparent;color:inherit}button{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;cursor:pointer}.paypal-error{color:#b42318}table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:.92rem}th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}a{color:var(--accent)}button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}</style></head><body><main>${body}</main><script src="/paypal-buttons.js"></script><script async src="${process.env.PAYPAL_ENVIRONMENT === "live" ? "https://www.paypal.com" : "https://www.sandbox.paypal.com"}/web-sdk/v6/core" onload="portagePayPalReady()"></script></body></html>`;
++
++async function fulfilPayment(purchaseId: string, patch: { paymentProvider: "stripe" | "paypal"; sessionId?: string | null; paymentIntentId?: string | null; paypalOrderId?: string | null; paypalCaptureId?: string | null }): Promise<boolean> {
++  const purchase = getPurchase(purchaseId);
++  if (!purchase || purchase.status !== "pending") return false;
++  updatePurchase(purchaseId, { ...patch, status: "paid" });
++  addCredits(purchase.email, purchase.credits);
++  return true;
++}
++
++function recordPaymentRefund(purchase: ReturnType<typeof getPurchase>, refundedAmount: number): void {
++  if (!purchase) return;
++  const shouldBeClawedBack = Math.round((purchase.credits * refundedAmount) / purchase.amount);
++  const delta = shouldBeClawedBack - purchase.creditsClawedBack;
++  if (delta > 0) addCredits(purchase.email, -delta);
++  updatePurchase(purchase.id, {
++    status: refundedAmount >= purchase.amount ? "refunded" : "partially_refunded",
++    refundedAmount,
++    creditsClawedBack: shouldBeClawedBack,
++  });
++}
+ 
+ const app = express();
+ 
+-// --- Webhooks. This route needs the raw request body, so it is registered before the body parsers. ---
+ app.post("/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+   let event: Stripe.Event;
+   try {
+@@ -40,145 +55,165 @@ app.post("/webhooks/stripe", express.raw({ type: "application/json" }), async (r
+     res.status(400).send("Webhook signature verification failed");
+     return;
+   }
+-
+   if (event.type === "checkout.session.completed") {
+     const session = event.data.object as Stripe.Checkout.Session;
+-    const purchase = session.client_reference_id ? getPurchase(session.client_reference_id) : undefined;
+-    if (purchase && purchase.status === "pending" && session.payment_status === "paid") {
+-      // Confirm what was bought from the session's line items, then grant the credits.
+-      const items = await stripe.checkout.sessions.listLineItems(session.id);
+-      console.log(`[quill] ${purchase.id} paid: ${items.data.map((i) => `${i.description} x${i.quantity}`).join(", ")}`);
+-      updatePurchase(purchase.id, {
+-        status: "paid",
+-        sessionId: session.id,
+-        paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null),
+-      });
+-      addCredits(purchase.email, purchase.credits);
++    if (session.client_reference_id && session.payment_status === "paid") {
++      const purchase = getPurchase(session.client_reference_id);
++      if (purchase?.status === "pending") {
++        const items = await stripe.checkout.sessions.listLineItems(session.id);
++        console.log(`[quill] ${purchase.id} paid: ${items.data.map((i) => `${i.description} x${i.quantity}`).join(", ")}`);
++        await fulfilPayment(purchase.id, {
++          paymentProvider: "stripe", sessionId: session.id,
++          paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null),
++        });
++      }
+     }
+   } else if (event.type === "charge.refunded") {
+     const charge = event.data.object as Stripe.Charge;
+     const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+-    const purchase = pi ? findByPaymentIntent(pi) : undefined;
+-    if (purchase) {
+-      // Take back credits in proportion to the amount refunded.
+-      const shouldBeClawedBack = Math.round((purchase.credits * charge.amount_refunded) / purchase.amount);
+-      const delta = shouldBeClawedBack - purchase.creditsClawedBack;
+-      if (delta > 0) addCredits(purchase.email, -delta);
+-      updatePurchase(purchase.id, {
+-        status: charge.refunded ? "refunded" : "partially_refunded",
+-        refundedAmount: charge.amount_refunded,
+-        creditsClawedBack: shouldBeClawedBack,
+-      });
+-    }
++    recordPaymentRefund(pi ? findByPaymentIntent(pi) : undefined, charge.amount_refunded);
+   }
+   res.json({ received: true });
+ });
+ 
++app.post("/webhooks/paypal", express.text({ type: "application/json" }), async (req, res) => {
++  try {
++    const verification = await verifyPayPalWebhook(req.headers, req.body);
++    if (!verification.verified) {
++      res.status(400).send("PayPal webhook verification failed");
++      return;
++    }
++    const event = verification.event;
++    const resource = event.resource;
++    if (event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
++      const purchaseId = resource.custom_id;
++      const orderId = resource.supplementary_data?.related_ids?.order_id;
++      const purchase = purchaseId ? getPurchase(purchaseId) : orderId ? findByPayPalOrder(orderId) : undefined;
++      if (purchase && resource.id) {
++        await fulfilPayment(purchase.id, { paymentProvider: "paypal", paypalOrderId: orderId ?? purchase.paypalOrderId, paypalCaptureId: resource.id });
++      }
++    } else if (event.event_type === "PAYMENT.CAPTURE.REFUNDED") {
++      const captureId = capturedPaymentIdOfRefund(event);
++      const purchase = captureId ? findByPayPalCapture(captureId) : undefined;
++      const total = resource.seller_payable_breakdown?.total_refunded_amount;
++      if (purchase && total) recordPaymentRefund(purchase, fromPayPalMoney(total));
++    }
++    res.json({ received: true });
++  } catch (err) {
++    console.error("[quill] PayPal webhook error:", err instanceof Error ? err.message : err);
++    res.status(400).send("PayPal webhook verification failed");
++  }
++});
++
+ app.use(express.urlencoded({ extended: false }));
+ app.use(express.json());
+ 
++app.get("/paypal-buttons.js", (_req, res) => {
++  res.type("application/javascript").send(`(function(){function e(b,m){var n=b.nextElementSibling;if(!n||!n.classList.contains("paypal-error")){n=document.createElement("p");n.className="paypal-error";n.setAttribute("role","alert");b.insertAdjacentElement("afterend",n)}n.textContent=m||"";n.hidden=!m}function f(b){var o={},r=b.dataset.form?document.getElementById(b.dataset.form):null;if(r)new FormData(r).forEach(function(v,k){if(typeof v==="string")o[k]=v});return o}async function c(b,u){e(b,"");var r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(f(b))}),d=await r.json().catch(function(){return{}});if(!r.ok||!d.orderId){var m=d.error||"PayPal checkout is unavailable right now.";e(b,m);throw Error(m)}return{orderId:d.orderId}}async function s(){var q=document.querySelector('meta[name="paypal-checkout"]');if(!q||!window.paypal||!q.dataset.clientId)return;var x=await window.paypal.createInstance({clientId:q.dataset.clientId,components:["paypal-payments"],pageType:"checkout"}),m=await x.findEligibleMethods({currencyCode:q.dataset.currency||"USD"});if(!m.isEligible("paypal"))return;document.querySelectorAll("paypal-button[data-form]").forEach(function(b){var z=x.createPayPalOneTimePaymentSession({onApprove:async function(d){var r=await fetch(q.dataset.captureUrl.replace("{orderId}",encodeURIComponent(d.orderId)),{method:"POST"}),v=await r.json().catch(function(){return{}});if(r.ok&&v.redirectUrl)location.assign(v.redirectUrl);else e(b,v.error||"The payment could not be completed.")},onCancel:function(){e(b,"")},onError:function(){e(b,"PayPal ran into a problem. Please try again.")}});b.removeAttribute("hidden");b.addEventListener("click",async function(){try{await z.start({presentationMode:"auto"},c(b,q.dataset.createUrl))}catch(err){if(!b.nextElementSibling||b.nextElementSibling.hidden)e(b,"PayPal checkout could not start.");console.error(err)}})})}window.portagePayPalReady=function(){s().catch(function(err){console.error("PayPal buttons could not load",err)})}})();`);
++});
++
+ app.get("/", (_req, res) => {
+-  const cards = (Object.entries(PACKS) as [PackId, (typeof PACKS)[PackId]][])
+-    .map(
+-      ([id, p]) => `<form class="pack" method="post" action="/checkout"><h2>${p.name}</h2><div class="price">${money(p.cents)}</div>
+-      <div>${p.credits} credits</div><input type="hidden" name="pack" value="${id}">
+-      <label for="email-${id}">Email</label><input id="email-${id}" name="email" type="email" required placeholder="you@example.com">
+-      <button type="submit">Buy ${p.name}</button></form>`,
+-    )
+-    .join("");
++  const cards = (Object.entries(PACKS) as [PackId, (typeof PACKS)[PackId]][]).map(([id, p]) => {
++    const formId = `checkout-${id}`;
++    return `<form id="${formId}" class="pack" method="post" action="/checkout"><h2>${p.name}</h2><div class="price">${money(p.cents)}</div><div>${p.credits} credits</div><input type="hidden" name="pack" value="${id}"><label for="email-${id}">Email</label><input id="email-${id}" name="email" type="email" required placeholder="you@example.com"><button type="submit">Buy ${p.name}</button><paypal-button type="pay" class="paypal-gold" data-form="${formId}" hidden>Pay with PayPal</paypal-button></form>`;
++  }).join("");
+   res.send(page("Quill", `<h1>Quill credits</h1><p class="lede">Credits power Quill's rewrite and summarise tools.</p><div class="packs">${cards}</div>`));
+ });
+ 
+-app.post("/checkout", async (req, res) => {
++function checkoutInput(req: express.Request): { packId: string; email: string; pack: (typeof PACKS)[PackId] } | undefined {
+   const packId = String(req.body.pack ?? "");
+   const email = String(req.body.email ?? "").trim().toLowerCase();
+-  // Own keys only: "constructor" or "__proto__" must not count as a pack.
+-  if (!Object.hasOwn(PACKS, packId) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+-    res.status(400).send(page("Quill", "<h1>Choose a pack and enter a valid email</h1><p><a href='/'>Back</a></p>"));
+-    return;
+-  }
+-  const pack = PACKS[packId as PackId];
++  if (!Object.hasOwn(PACKS, packId) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return undefined;
++  return { packId, email, pack: PACKS[packId as PackId] };
++}
+ 
+-  const purchase = createPurchase({ email, pack: packId, credits: pack.credits, amount: pack.cents, currency: "usd" });
+-  let session: Stripe.Checkout.Session;
++app.post("/checkout", async (req, res) => {
++  const input = checkoutInput(req);
++  if (!input) { res.status(400).send(page("Quill", "<h1>Choose a pack and enter a valid email</h1><p><a href='/'>Back</a></p>")); return; }
++  const purchase = createPurchase({ email: input.email, pack: input.packId, credits: input.pack.credits, amount: input.pack.cents, currency: "usd" });
+   try {
+-    session = await stripe.checkout.sessions.create({
+-      mode: "payment",
+-      customer_email: email,
+-      client_reference_id: purchase.id,
+-      line_items: [
+-        {
+-          price_data: {
+-            currency: "usd",
+-            unit_amount: pack.cents,
+-            product_data: { name: `Quill ${pack.name} credits`, description: `${pack.credits} credits` },
+-          },
+-          quantity: 1,
+-        },
+-      ],
+-      metadata: { purchaseId: purchase.id, pack: packId },
+-      success_url: `${BASE_URL}/account?email=${encodeURIComponent(email)}&session_id={CHECKOUT_SESSION_ID}`,
+-      cancel_url: `${BASE_URL}/`,
+-    });
++    const session = await stripe.checkout.sessions.create({ mode: "payment", customer_email: input.email, client_reference_id: purchase.id, line_items: [{ price_data: { currency: "usd", unit_amount: input.pack.cents, product_data: { name: `Quill ${input.pack.name} credits`, description: `${input.pack.credits} credits` } }, quantity: 1 }], metadata: { purchaseId: purchase.id, pack: input.packId }, success_url: `${BASE_URL}/account?email=${encodeURIComponent(input.email)}&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${BASE_URL}/` });
++    updatePurchase(purchase.id, { sessionId: session.id });
++    res.redirect(303, session.url!);
+   } catch (err) {
+     console.error("[quill] could not create a checkout session:", (err as Error).message);
+     updatePurchase(purchase.id, { status: "failed" });
+     res.status(502).send(page("Quill", "<h1>Checkout is unavailable right now</h1><p>Please try again in a moment. <a href='/'>Back</a></p>"));
+-    return;
+   }
+-  updatePurchase(purchase.id, { sessionId: session.id });
+-  res.redirect(303, session.url!);
++});
++
++app.post("/paypal/orders", async (req, res) => {
++  const input = checkoutInput(req);
++  if (!input) { res.status(400).json({ error: "Choose a pack and enter a valid email" }); return; }
++  const purchase = createPurchase({ email: input.email, pack: input.packId, credits: input.pack.credits, amount: input.pack.cents, currency: "usd" });
++  const amount = toPayPalMoney(input.pack.cents, "USD");
++  try {
++    const result = await ordersApi().createOrder({
++      body: {
++        intent: CheckoutPaymentIntent.Capture,
++        purchaseUnits: [{ customId: purchase.id, amount: { currencyCode: amount.currencyCode, value: amount.value, breakdown: { itemTotal: amount } }, items: [{ name: `Quill ${input.pack.name} credits`, unitAmount: amount, quantity: "1" }] }],
++        paymentSource: { paypal: { emailAddress: input.email, experienceContext: { shippingPreference: PaypalWalletContextShippingPreference.NoShipping, returnUrl: `${BASE_URL}/account?email=${encodeURIComponent(input.email)}&session_id=${purchase.id}`, cancelUrl: `${BASE_URL}/` } } },
++      },
++      paypalRequestId: paypalRequestId(),
++    });
++    if (!result.result.id) throw new Error("PayPal did not return an order ID");
++    updatePurchase(purchase.id, { paypalOrderId: result.result.id });
++    res.json({ orderId: result.result.id });
++  } catch (err) {
++    console.error("[quill] could not create PayPal order:", describePayPalError(err));
++    updatePurchase(purchase.id, { status: "failed" });
++    res.status(502).json({ error: "PayPal checkout is unavailable right now" });
++  }
++});
++
++app.post("/paypal/orders/:orderId/capture", async (req, res) => {
++  const purchase = findByPayPalOrder(req.params.orderId);
++  if (!purchase) { res.status(404).json({ error: "PayPal order not found" }); return; }
++  try {
++    const result = await ordersApi().captureOrder({ id: req.params.orderId, paypalRequestId: paypalRequestId() });
++    const unit = result.result.purchaseUnits?.[0];
++    const capture = unit?.payments?.captures?.[0];
++    if (result.result.status !== "COMPLETED" || capture?.status !== "COMPLETED" || !capture.id || !capture.amount) throw new Error("PayPal capture was not completed");
++    if (fromPayPalMoney(capture.amount) !== purchase.amount || capture.amount.currencyCode?.toLowerCase() !== purchase.currency) throw new Error("PayPal capture amount did not match the purchase");
++    await fulfilPayment(purchase.id, { paymentProvider: "paypal", paypalOrderId: req.params.orderId, paypalCaptureId: capture.id });
++    res.json({ redirectUrl: `${BASE_URL}/account?email=${encodeURIComponent(purchase.email)}&session_id=${purchase.id}` });
++  } catch (err) {
++    console.error("[quill] could not capture PayPal order:", describePayPalError(err));
++    res.status(502).json({ error: "PayPal payment could not be completed" });
++  }
+ });
+ 
+ app.get("/account", (req, res) => {
+   const email = String(req.query.email ?? "").toLowerCase();
+   const acct = accountFor(email);
+-  const rows = acct.purchases
+-    .map((p) => `<tr><td>${esc(p.id)}</td><td>${esc(PACKS[p.pack as PackId]?.name ?? p.pack)}</td><td>${p.credits}</td><td>${money(p.amount)}</td><td>${esc(p.status.replace("_", " "))}</td></tr>`)
+-    .join("");
+-  res.send(
+-    page(
+-      "Your Quill account",
+-      `<h1>${esc(email || "Account")}</h1><p class="lede"><strong>${acct.credits}</strong> credits available.</p>
+-      <table><thead><tr><th>Purchase</th><th>Pack</th><th>Credits</th><th>Paid</th><th>Status</th></tr></thead><tbody>${rows || "<tr><td colspan='5'>No purchases yet.</td></tr>"}</tbody></table>
+-      <p><a href="/">Buy more credits</a></p>`,
+-    ),
+-  );
+-});
+-
+-app.get("/api/purchases", (req, res) => {
+-  res.json(accountFor(String(req.query.email ?? "").toLowerCase()));
++  const rows = acct.purchases.map((p) => `<tr><td>${esc(p.id)}</td><td>${esc(PACKS[p.pack as PackId]?.name ?? p.pack)}</td><td>${p.credits}</td><td>${money(p.amount)}</td><td>${esc(p.status.replace("_", " "))}</td></tr>`).join("");
++  res.send(page("Your Quill account", `<h1>${esc(email || "Account")}</h1><p class="lede"><strong>${acct.credits}</strong> credits available.</p><table><thead><tr><th>Purchase</th><th>Pack</th><th>Credits</th><th>Paid</th><th>Status</th></tr></thead><tbody>${rows || "<tr><td colspan='5'>No purchases yet.</td></tr>"}</tbody></table><p><a href="/">Buy more credits</a></p>`));
+ });
++app.get("/api/purchases", (req, res) => res.json(accountFor(String(req.query.email ?? "").toLowerCase())));
+ 
+-// Demo admin action, protected by a shared token: refund a purchase fully, or partly with `amount` in cents.
+ app.post("/admin/refund", async (req, res) => {
+-  if (req.header("x-admin-token") !== ADMIN_TOKEN) {
+-    res.status(401).json({ error: "Missing or wrong admin token" });
+-    return;
+-  }
++  if (req.header("x-admin-token") !== ADMIN_TOKEN) { res.status(401).json({ error: "Missing or wrong admin token" }); return; }
+   const purchase = getPurchase(String(req.body.purchaseId ?? ""));
+-  if (!purchase?.paymentIntentId) {
+-    res.status(404).json({ error: "Purchase not found or not paid" });
+-    return;
+-  }
++  if (!purchase) { res.status(404).json({ error: "Purchase not found or not paid" }); return; }
+   try {
+-    const refund = await stripe.refunds.create({
+-      payment_intent: purchase.paymentIntentId,
+-      ...(req.body.amount ? { amount: Number(req.body.amount) } : {}),
+-    });
++    if (purchase.paymentProvider === "paypal") {
++      if (!purchase.paypalCaptureId) { res.status(404).json({ error: "Purchase has no PayPal capture" }); return; }
++      const requested = req.body.amount ? Number(req.body.amount) : undefined;
++      if (requested !== undefined && (!Number.isSafeInteger(requested) || requested <= 0)) { res.status(400).json({ error: "Refund amount must be a positive whole number of cents" }); return; }
++      const refund = await paymentsApi().refundCapturedPayment({ captureId: purchase.paypalCaptureId, body: requested === undefined ? {} : { amount: toPayPalMoney(requested, purchase.currency) }, paypalRequestId: paypalRequestId() });
++      res.json({ refunded: refund.result.amount?.value });
++      return;
++    }
++    if (!purchase.paymentIntentId) { res.status(404).json({ error: "Purchase not found or not paid" }); return; }
++    const refund = await stripe.refunds.create({ payment_intent: purchase.paymentIntentId, ...(req.body.amount ? { amount: Number(req.body.amount) } : {}) });
+     res.json({ refunded: refund.amount });
+   } catch (err) {
+-    res.status(400).json({ error: (err as Error).message });
++    res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+   }
+ });
+ 
+-// Last-resort error handler. Express's default handler copies an error's `headers` onto the response, and
+-// Stripe errors carry Stripe's own response headers, which produces a malformed reply. Answer plainly instead.
+-const onError: express.ErrorRequestHandler = (err, _req, res, _next) => {
++app.use(((err, _req, res, _next) => {
+   console.error("[quill] unhandled error:", err instanceof Error ? err.message : err);
+-  if (res.headersSent) return;
+-  res.status(500).type("text/plain").send("Something went wrong. Please try again.");
+-};
+-app.use(onError);
+-
++  if (!res.headersSent) res.status(500).type("text/plain").send("Something went wrong. Please try again.");
++}) as express.ErrorRequestHandler);
+ app.listen(PORT, HOST, () => console.log(`[quill] listening on ${BASE_URL} (bound to ${HOST})`));

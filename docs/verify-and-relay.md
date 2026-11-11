@@ -52,6 +52,8 @@ npx portage verify path/to/app --url http://localhost:3000 --webhook /api/webhoo
 
 - [Brewbox](../benchmark/runs/brewbox-add/README.md) (Next.js, React buttons): 13 of 13 steps.
 - [Quill](../benchmark/runs/quill-add/README.md) (Express, server-rendered buttons, a form to fill): 14 of 14 steps.
+- [Replace mode, by a headless agent](../benchmark/runs/brewbox-replace-agent-run/README.md) (Brewbox moves to PayPal: catalog copied, Stripe checkout removed, Stripe kept for old refunds): 13 of 13 steps on the first run.
+- [GitHub Copilot (GPT 5.6) in VS Code](../benchmark/runs/quill-copilot-run/README.md): 14 of 14 steps. Its first attempt, started without the trial prompt, edited Portage's own test app and scanner; the playbook's rules are tighter because of it.
 - [A headless Claude Code agent on a fresh clone](../benchmark/runs/quill-agent-run/README.md): one pasted prompt, no help, 14 of 14 steps on the first `verify_checkout`. Its first attempt stopped before editing anything because ContextMatic wasn't signed in, which is the playbook's rule working.
 
 All used real PayPal sandbox payments, real PayPal webhooks through the relay, and Standin in place of Stripe.

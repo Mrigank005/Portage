@@ -25,7 +25,8 @@ import { checks, initAgent, renderChecks, setupTrial, TRIAL_APPS, type Agent, ty
 const HELP = `Portage: adds PayPal to apps that use Stripe.
 
 Usage:
-  portage try <brewbox|quill> [--dir <folder>] [--force]    Check your setup, copy a test app into trial/ with its settings,
+  portage try <brewbox|quill> [--mode add|replace] [--dir <folder>] [--force]
+                                                            Check your setup, copy a test app into trial/ with its settings,
                                                             and print the prompt to paste into your coding agent
   portage init --agent claude|copilot|cursor [--project <repo>]
                                                             Set Portage up for an agent, to use on another repository
@@ -168,7 +169,9 @@ async function tryCommand(positional: string[], flags: Map<string, string | true
     return 1;
   }
   try {
-    const r = await setupTrial(app, { dir: str(flags, "dir"), force: flags.has("force"), install: !flags.has("no-install"), log: (m) => console.log(`  ${m}`) });
+    const mode = (str(flags, "mode") ?? "add") as "add" | "replace";
+    if (mode !== "add" && mode !== "replace") throw new Error(`--mode must be add or replace, not ${mode}`);
+    const r = await setupTrial(app, { mode, dir: str(flags, "dir"), force: flags.has("force"), install: !flags.has("no-install"), log: (m) => console.log(`  ${m}`) });
     console.log(`\nReady: ${path.relative(process.cwd(), r.dir) || r.dir}\n`);
     console.log(`Open this repository in Claude Code, VS Code with GitHub Copilot (Agent mode) or Cursor. Its MCP config gives the agent Portage and ContextMatic (allow both servers, and sign in to ContextMatic when asked). Then paste this prompt (also saved in ${path.relative(process.cwd(), r.promptFile)}):\n`);
     console.log("-----8<-----");

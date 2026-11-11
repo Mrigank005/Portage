@@ -9,7 +9,8 @@ You are adding PayPal to an app that already takes payments with Stripe. Portage
 
 ## Rules
 
-- **Nothing is edited before the developer approves the plan.** For Portage's own test apps (in its `suite/` folder, or copied to `trial/` by `portage try`) the plan counts as approved; say so when you continue.
+- **Nothing is edited before the developer approves the plan.** If you can't ask (your question fails, or there's no way to ask), stop after showing the plan: no answer is not approval. The one exception is a test app that `npx portage try` copied into `trial/`, whose prompt says the plan counts as approved; say so when you continue.
+- **Edit only the app the plan is for.** If the repository has several apps and the developer hasn't named one, list them and ask. Never edit Portage's own repository (its `suite/` apps, `packages/` or tests): to try Portage on a suite app, run `npx portage try <app>` and work on the copy in `trial/`. Never change code or tests outside the app to make them pass; if your change breaks something outside the app, stop and report it.
 - **PayPal SDK code comes from ContextMatic, never from memory.** Before writing any call to the PayPal Server SDK (`@paypal/paypal-server-sdk`), use the `context-matic` MCP server: `fetch_api` (language `typescript`, key `paypal`), then `endpoint_search` for every method and `model_search` for every model you use. Each plan step lists its lookups. If ContextMatic is unavailable, stop and say so.
 - **Start from Portage's reference code** where a plan step names it (`get_reference_code`). It is typechecked against the real PayPal packages and tested against the PayPal sandbox. Adapt names, paths and style to the app; keep the behaviour.
 - **Keep a log of your ContextMatic lookups** (tool, query, what it confirmed). It goes in the report and the pull request under "ContextMatic lookups".
