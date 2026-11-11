@@ -179,7 +179,7 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
       `Server: \`${map.config.packages.server}\` (the APIMatic-generated PayPal Server SDK).`,
       usesReact
         ? `Browser: \`${map.config.packages.react}\` for the PayPal buttons.`
-        : `Browser: the PayPal JS SDK script (${map.config.packages.browserScript}); no package needed.`,
+        : `Browser: PayPal's JS SDK v6 script, ${map.config.packages.browserScript}; no package needed.`,
     ],
     contextmatic: [fetchApi],
   });
@@ -565,7 +565,8 @@ function buildPlan(plan: Plan, scan: ScanResult, app: AppScan, mode: Mode): Plan
     files: [],
     details: [
       "Typecheck and build the app.",
-      "Run verify_checkout: buy something with the PayPal sandbox buyer, check the order is marked paid by the capture route and by the webhook, then refund it and check the order shows the refund.",
+      "Run setup_webhook_relay once (it registers a PayPal sandbox webhook pointing at Portage's relay and writes PAYPAL_WEBHOOK_ID to the env file), then restart the app.",
+      "Run verify_checkout with the app's URL, the checkout page, the PayPal webhook route and the paid/refunded texts: a real sandbox payment in a browser, the capture checked with PayPal, PayPal's real webhooks forwarded (and a forged one rejected), then a refund. Fix and re-run until every step passes.",
       mode === "add" ? "Run the app's existing Stripe checkout once more to confirm it still works." : "Confirm no new Stripe checkout can be started.",
     ],
     contextmatic: [],

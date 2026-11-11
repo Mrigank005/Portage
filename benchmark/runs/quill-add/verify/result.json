@@ -1,0 +1,141 @@
+{
+  "ok": true,
+  "appUrl": "http://127.0.0.1:4301",
+  "steps": [
+    {
+      "name": "App is running",
+      "status": "pass",
+      "detail": "http://127.0.0.1:4301/ answered HTTP 200"
+    },
+    {
+      "name": "Webhook relay connected",
+      "status": "pass",
+      "detail": "https://portage-relay.onrender.com (answered in 1.2s); forwarding to http://127.0.0.1:4301/webhooks/paypal"
+    },
+    {
+      "name": "Checkout form filled",
+      "status": "pass",
+      "detail": "#email-starter"
+    },
+    {
+      "name": "PayPal button is on the page",
+      "status": "pass",
+      "detail": "JS SDK v6 <paypal-button>, using button 1 of 2"
+    },
+    {
+      "name": "PayPal checkout opens",
+      "status": "pass",
+      "detail": "Popup for order 7JR63685P5283563J (PAYER_ACTION_REQUIRED, 9.00 USD), created by the app with its own credentials"
+    },
+    {
+      "name": "Sandbox buyer approves",
+      "status": "pass",
+      "detail": "Logged in as PAYPAL_SANDBOX_US_BUYER and approved 9.00 USD"
+    },
+    {
+      "name": "App captures the payment",
+      "status": "pass",
+      "detail": "PayPal shows capture 5U2946948L952602P COMPLETED for 9.00 USD"
+    },
+    {
+      "name": "App shows the order as paid",
+      "status": "pass",
+      "detail": "\"100 credits available\" on /account?email=buyer-1794355272%40example.com&session_id=pur_4181bed490"
+    },
+    {
+      "name": "PAYMENT.CAPTURE.COMPLETED webhook",
+      "status": "pass",
+      "detail": "Real PayPal event forwarded through the relay; the app verified it with PayPal and answered 200"
+    },
+    {
+      "name": "Refund through PayPal",
+      "status": "pass",
+      "detail": "Refund 99471112R68784722 COMPLETED (full amount, as a merchant would refund from PayPal)"
+    },
+    {
+      "name": "PAYMENT.CAPTURE.REFUNDED webhook",
+      "status": "pass",
+      "detail": "Real PayPal event forwarded through the relay; the app verified it with PayPal and answered 200"
+    },
+    {
+      "name": "App shows the order as refunded",
+      "status": "pass",
+      "detail": "\"refunded\" on /account?email=buyer-1794355272%40example.com&session_id=pur_4181bed490"
+    },
+    {
+      "name": "PayPal shows the capture refunded",
+      "status": "pass",
+      "detail": "Capture 5U2946948L952602P is REFUNDED"
+    },
+    {
+      "name": "Forged webhook is rejected",
+      "status": "pass",
+      "detail": "A copy of the real PAYMENT.CAPTURE.COMPLETED event with a changed event ID, sent with PayPal's original signature, got HTTP 400"
+    }
+  ],
+  "paypalOrderId": "7JR63685P5283563J",
+  "captureId": "5U2946948L952602P",
+  "refundId": "99471112R68784722",
+  "amount": "9.00 USD",
+  "webhooks": [
+    {
+      "eventId": "WH-5DA535988W7560616-1K497582YN6218547",
+      "eventType": "PAYMENT.CAPTURE.COMPLETED",
+      "resourceId": "5U2946948L952602P",
+      "orderId": "7JR63685P5283563J",
+      "captureId": "5U2946948L952602P",
+      "seq": 1,
+      "status": 200,
+      "ok": true
+    },
+    {
+      "eventId": "WH-2BE44586X0382974B-0Y602559DD5813215",
+      "eventType": "PAYMENT.CAPTURE.REFUNDED",
+      "resourceId": "99471112R68784722",
+      "orderId": null,
+      "captureId": "5U2946948L952602P",
+      "seq": 2,
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "screenshots": [
+    "verify/..\\verify\\quill2\\01-checkout-page.png",
+    "verify/..\\verify\\quill2\\02-paypal-review.png",
+    "verify/..\\verify\\quill2\\03-after-payment.png",
+    "verify/..\\verify\\quill2\\04-after-refund.png"
+  ],
+  "outDir": "verify",
+  "browser": "chrome",
+  "settingsFrom": {
+    "PAYPAL_ENVIRONMENT": ".env",
+    "PAYPAL_CLIENT_ID": ".env",
+    "PAYPAL_CLIENT_SECRET": ".env",
+    "PAYPAL_WEBHOOK_ID": ".env",
+    "PORTAGE_RELAY_URL": ".env",
+    "PORTAGE_RELAY_CHANNEL": ".env",
+    "PAYPAL_SANDBOX_BUYER_EMAIL": "(Portage repo)/.env",
+    "PAYPAL_SANDBOX_BUYER_PASSWORD": "(Portage repo)/.env",
+    "PAYPAL_SANDBOX_US_BUYER_EMAIL": "(Portage repo)/.env",
+    "PAYPAL_SANDBOX_US_BUYER_PASSWORD": "(Portage repo)/.env"
+  },
+  "durationMs": 68595,
+  "log": [
+    "[0.0s] PASS App is running: http://127.0.0.1:4301/ answered HTTP 200",
+    "[1.6s] PASS Webhook relay connected: https://portage-relay.onrender.com (answered in 1.2s); forwarding to http://127.0.0.1:4301/webhooks/paypal",
+    "[7.2s] PASS Checkout form filled: #email-starter",
+    "[7.3s] PASS PayPal button is on the page: JS SDK v6 <paypal-button>, using button 1 of 2",
+    "[14.1s] PASS PayPal checkout opens: Popup for order 7JR63685P5283563J (PAYER_ACTION_REQUIRED, 9.00 USD), created by the app with its own credentials",
+    "[22.3s] PASS Sandbox buyer approves: Logged in as PAYPAL_SANDBOX_US_BUYER and approved 9.00 USD",
+    "[28.0s] PASS App captures the payment: PayPal shows capture 5U2946948L952602P COMPLETED for 9.00 USD",
+    "[29.7s] PASS App shows the order as paid: \"100 credits available\" on /account?email=buyer-1794355272%40example.com&session_id=pur_4181bed490",
+    "[46.5s] webhook PAYMENT.CAPTURE.COMPLETED → app answered 200",
+    "[46.5s] PASS PAYMENT.CAPTURE.COMPLETED webhook: Real PayPal event forwarded through the relay; the app verified it with PayPal and answered 200",
+    "[49.4s] PASS Refund through PayPal: Refund 99471112R68784722 COMPLETED (full amount, as a merchant would refund from PayPal)",
+    "[66.3s] webhook PAYMENT.CAPTURE.REFUNDED → app answered 200",
+    "[66.3s] PASS PAYMENT.CAPTURE.REFUNDED webhook: Real PayPal event forwarded through the relay; the app verified it with PayPal and answered 200",
+    "[66.5s] PASS App shows the order as refunded: \"refunded\" on /account?email=buyer-1794355272%40example.com&session_id=pur_4181bed490",
+    "[67.8s] PASS PayPal shows the capture refunded: Capture 5U2946948L952602P is REFUNDED",
+    "[68.2s] PASS Forged webhook is rejected: A copy of the real PAYMENT.CAPTURE.COMPLETED event with a changed event ID, sent with PayPal's original signature, got HTTP 400"
+  ]
+}

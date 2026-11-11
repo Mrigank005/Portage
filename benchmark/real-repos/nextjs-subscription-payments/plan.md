@@ -66,7 +66,8 @@ Source: https://github.com/vercel/nextjs-subscription-payments at commit `bdd081
    - Start from Portage's reference code: get_reference_code `PayPalButtons`
 10. **Prove it with a real PayPal sandbox payment**
    - Typecheck and build the app.
-   - Run verify_checkout: buy something with the PayPal sandbox buyer, check the order is marked paid by the capture route and by the webhook, then refund it and check the order shows the refund.
+   - Run setup_webhook_relay once (it registers a PayPal sandbox webhook pointing at Portage's relay and writes PAYPAL_WEBHOOK_ID to the env file), then restart the app.
+   - Run verify_checkout with the app's URL, the checkout page, the PayPal webhook route and the paid/refunded texts: a real sandbox payment in a browser, the capture checked with PayPal, PayPal's real webhooks forwarded (and a forged one rejected), then a refund. Fix and re-run until every step passes.
    - Run the app's existing Stripe checkout once more to confirm it still works.
 
 ## Files

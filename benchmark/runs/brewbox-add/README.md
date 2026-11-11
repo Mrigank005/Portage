@@ -33,7 +33,28 @@ Against Standin (as Stripe) and the **real PayPal sandbox**:
 | Browser: click "Pay with PayPal", log in as the sandbox buyer in PayPal's popup, approve; Brewbox captures and shows the order paid | passed 4 times (3 on the final code) |
 | Refunds on each real payment: repeated capture charges nothing; a non-numeric amount is refused; $10 partial refund, then the rest; PayPal reports PARTIALLY_REFUNDED, then REFUNDED; over-refund refused with PayPal's reason | 12 of 12, every run |
 
-**Not verified yet:** PayPal webhook delivery. PayPal can't reach `localhost`, so the webhook route was tested with a forged request (rejected) but not with a real delivery. That needs the webhook relay (Phase 4).
+### Then with `verify_checkout` and real webhooks (2026-11-11)
+
+Once the webhook relay was live, `setup_webhook_relay` registered a webhook in the PayPal sandbox app and `verify_checkout` ran the whole thing on its own ([report card](verify/result.json), [screenshots](verify/)):
+
+| Step | Result |
+|---|---|
+| PayPal button on the page (JS SDK v6), popup, US sandbox buyer approves $49.00 | pass |
+| PayPal shows capture `8TH46033C4632815B` COMPLETED; Brewbox shows "Payment received" | pass |
+| PayPal's real `PAYMENT.CAPTURE.COMPLETED` webhook, through the relay; Brewbox verified it with PayPal | pass (HTTP 200) |
+| A forged copy of that event (changed event ID, PayPal's original signature) | rejected (HTTP 400) |
+| Full refund through PayPal; the real `PAYMENT.CAPTURE.REFUNDED` webhook; Brewbox shows "Order refunded" | pass (HTTP 200) |
+| PayPal shows the capture REFUNDED | pass |
+
+**Confirmed with PayPal's own tools.** The agent then looked the same payment up through PayPal's MCP server (the PayPal Agent Toolkit), independently of Portage:
+
+| Agent Toolkit call | PayPal returned |
+|---|---|
+| `get_order 6F891298T78998147` | COMPLETED, $49.00 "Pour-Over Starter Kit", `custom_id` `ord_cecf941e83` (Brewbox's own order ID); capture `8TH46033C4632815B` REFUNDED |
+| `get_refund 10C37321L8263421K` | COMPLETED, $49.00, `total_refunded_amount` 49.00, linked to that capture |
+| `list_transactions 8TH46033C4632815B` | not found yet: PayPal's transaction search lags behind new payments, so the playbook now uses `get_order` and `get_refund` and doesn't treat this as a failure |
+
+13 of 13 steps, 89 seconds. Earlier attempts found three things, now fixed: PayPal's login page keeps a hidden, sized password field (the browser step now follows the Next button instead); Git Bash rewrites `/api/...` arguments into Windows paths (`verify_checkout` now says so); and in one run PayPal's sandbox never generated `PAYMENT.CAPTURE.COMPLETED` at all (its own events API listed only the refund event), so a missing webhook from PayPal is now reported as a warning with that evidence, not as an app failure.
 
 ## What the run taught Portage
 

@@ -32,6 +32,17 @@ All lookups use `language=typescript` and `key=paypal`.
 | 17 | `model_search` | `Money` | `currencyCode` and `value`; `value` is an integer string for currencies like JPY. | Reference money helper |
 | 18 | `ask` (twice) | How to initialise the client with client credentials for the sandbox | **Failed** with a server error on 2026-11-11. | The client setup comes from the official code sample `endpoint_search createOrder` returned (#2): `clientCredentialsAuthCredentials`, `Environment.Sandbox` |
 
+## 2026-11-11: `verify_checkout` (Phase 4)
+
+`verify_checkout` uses the PayPal Server SDK itself, with the app's own credentials, to check what the app did.
+
+| # | Tool | Query | What it confirmed | Where it went |
+|---|---|---|---|---|
+| 19 | `model_search` | `PaymentCollection` (captures on a purchase unit of an `Order`) | `PurchaseUnit.payments` is a `PaymentCollection`; its `captures` are `OrdersCapture[]` (also `authorizations`, `refunds`). | Reading the capture ID, status and amount from `getOrder` after the buyer approves |
+| 20 | `endpoint_search` | `getCapturedPayment` | `PaymentsController.getCapturedPayment({ captureId })` returns `CapturedPayment`; 404 is a `CustomError`. | The final check that PayPal shows the capture REFUNDED |
+
+Webhook registration (`POST /v1/notifications/webhooks`) and PayPal's webhook events list (`GET /v1/notifications/webhooks-events`) are REST calls, because the SDK has no webhook methods (#7). The registration body follows the example in PayPal's own Claude Code plugin.
+
 The reference code (`packages/core/reference`) is typechecked against `@paypal/paypal-server-sdk` 2.5, so any name these lookups got wrong would fail the build. None did.
 
 Currency rules (which currencies PayPal accepts and which take no decimals) come from PayPal's own [currency codes page](https://developer.paypal.com/api/rest/reference/currency-codes/) and Stripe's [currencies page](https://docs.stripe.com/currencies), both read on 2026-11-10. They are not SDK facts, so they aren't ContextMatic lookups.

@@ -4,7 +4,7 @@
 
 Portage is a plugin for AI coding agents. It reads a codebase that takes payments through Stripe, wires PayPal into the same checkout, orders and webhooks, then proves the result works with a real PayPal sandbox payment before handing over a pull request.
 
-> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, and the playbook that drives the edit step. Portage's workflow has turned Brewbox into a store that takes real PayPal sandbox payments and refunds ([the run](benchmark/runs/brewbox-add/README.md)). The automated sandbox payment test (`verify_checkout`) and the webhook relay come next; steps marked *planned* are not built yet.
+> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, the playbook that drives the edit step, the **webhook relay** and **`verify_checkout`**, the automated sandbox payment test. Portage's workflow has added PayPal to Brewbox (Next.js) and Quill (Express), and `verify_checkout` passed on both with real sandbox payments, real PayPal webhooks and refunds ([Brewbox](benchmark/runs/brewbox-add/README.md), [Quill](benchmark/runs/quill-add/README.md)). Steps marked *planned* are not built yet.
 
 ---
 
@@ -21,10 +21,10 @@ AI coding agents should make this easy, but they guess at payment APIs. PayPal's
 3. **Approve.** Nothing is edited until the developer approves the plan.
 4. **Edit** *(built: playbook and reference code)*. The coding agent writes the PayPal integration with the official PayPal Server SDK, starting from Portage's tested reference code (`get_reference_code`) and looking up every SDK method and model through ContextMatic first. Buttons use PayPal's JS SDK v6.
 5. **Copy the catalog** *(built, replace mode)*. `migrate_catalog` copies Stripe products to the PayPal catalog (dry run first, idempotent) and keeps one-time prices, as PayPal amounts, in `portage.catalog.json`. It makes the same call as the PayPal Agent Toolkit's `create_product` (`POST /v1/catalogs/products`); Portage doesn't bundle the toolkit itself because its dependency tree adds seven npm security advisories, and Portage keeps `npm audit` at zero.
-6. **Prove it** *(planned)*. Start the app and complete a real sandbox checkout in a headless browser: buyer approval, capture, webhook, order marked paid, refund.
-7. **Hand over a pull request** *(planned)* with a report card of what changed, what was tested, and what still needs a human.
+6. **Prove it** *(built)*. `setup_webhook_relay` points a PayPal sandbox webhook at Portage's relay, so PayPal's webhooks reach an app on localhost. `verify_checkout` then completes a real sandbox checkout in a headless browser: buyer approval, the capture checked with PayPal, PayPal's real webhooks forwarded to the app (and a forged one that must be rejected), the order marked paid, then a refund. The agent fixes whatever fails and runs it again. If PayPal's own MCP server (the Agent Toolkit) is connected, the agent also looks the payment up there.
+7. **Hand over a pull request** *(built, as the playbook's report step)*. The agent writes what changed, the `verify_checkout` report card with PayPal's order, capture and refund IDs, its ContextMatic lookups, and what still needs a human, ready for the pull request description.
 
-Scan and plan only read code; they never change files and never read real env files. How they work, and everything they detect: [docs/scan-and-plan.md](docs/scan-and-plan.md). The edit step, reference code and catalog copy: [docs/edit-and-catalog.md](docs/edit-and-catalog.md). Results on five real open-source Stripe apps: [benchmark/real-repos](benchmark/real-repos/README.md).
+Scan and plan only read code; they never change files and never read real env files. How they work, and everything they detect: [docs/scan-and-plan.md](docs/scan-and-plan.md). The edit step, reference code and catalog copy: [docs/edit-and-catalog.md](docs/edit-and-catalog.md). The sandbox test and the relay: [docs/verify-and-relay.md](docs/verify-and-relay.md). Results on five real open-source Stripe apps: [benchmark/real-repos](benchmark/real-repos/README.md).
 
 ### Two modes
 
@@ -70,8 +70,9 @@ Every PayPal SDK method and model in Portage's map was confirmed through Context
 packages/core        scanner, Stripe→PayPal map (maps/stripe-paypal.json),
                      money conversion, planner                                (built)
 packages/mcp-server  Portage MCP server: scan_payment_surface, plan_migration, get_reference_code,
-                     migrate_catalog, and the `migrate` prompt (built; verify_checkout planned)
-packages/cli         `portage scan` and `portage plan`                        (built; `init` and `report` planned)
+                     migrate_catalog, setup_webhook_relay, verify_checkout, and the
+                     `migrate` prompt (built)
+packages/cli         `portage scan`, `plan`, `relay` and `verify`              (built; `init` planned)
 packages/standin     Standin, the local Stripe-compatible test server         (built)
 plugin/              plugin manifest, MCP config and the portage-migrate skill
 suite/               small test apps used to evaluate Portage                 (built)
@@ -79,9 +80,10 @@ suite/               small test apps used to evaluate Portage                 (b
   quill-saas           Express app selling credit packs
   ledgerline-flask     Flask app, unsupported on purpose
 benchmark/real-repos scan and plan results on real open-source Stripe apps
+benchmark/runs       full runs on the suite apps, with verify_checkout report cards and screenshots
 scripts/             setup checks, PayPal token refresh, suite end-to-end check, real-repo benchmark
 apps/website         project website with setup prompts and benchmark results (planned)
-apps/webhook-relay   forwards PayPal sandbox webhooks to apps running locally (planned)
+apps/webhook-relay   forwards PayPal sandbox webhooks to apps running locally (built; on Render)
 ```
 
 ## Getting started
@@ -99,11 +101,11 @@ npx portage plan suite/quill-saas             # the plan for adding PayPal (--mo
 npx portage plan suite/ledgerline-flask       # a refusal, with the reason
 ```
 
-To try PayPal payments yourself you need a PayPal developer account with sandbox credentials. Use a **US sandbox buyer** to pay: in our runs, the default sandbox buyer got "This seller doesn't accept payments in your currency", and a US buyer worked.
+To try PayPal payments yourself you need a PayPal developer account with sandbox credentials, and Chrome or Edge for `verify_checkout`. Use a **US sandbox buyer** to pay: in our runs, the default sandbox buyer got "This seller doesn't accept payments in your currency", and a US buyer worked.
 
 The suite check starts everything itself and needs ports 4242, 4300 and 4301 free. See [`suite/README.md`](suite/README.md) to run the apps by hand.
 
-Working in this repository with Claude Code, Cursor or GitHub Copilot also gives your agent Portage's MCP tools (`scan_payment_surface`, `plan_migration`, `get_reference_code`, `migrate_catalog`) and the `migrate` prompt, next to ContextMatic.
+Working in this repository with Claude Code, Cursor or GitHub Copilot also gives your agent Portage's MCP tools (`scan_payment_surface`, `plan_migration`, `get_reference_code`, `migrate_catalog`, `setup_webhook_relay`, `verify_checkout`) and the `migrate` prompt, next to ContextMatic.
 
 Setup prompts for the Portage plugin will be added here as it comes together. It will also need a PayPal developer account with sandbox credentials and a supported coding agent; see [`.env.example`](.env.example) for the configuration it reads.
 

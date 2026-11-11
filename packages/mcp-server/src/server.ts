@@ -1,6 +1,6 @@
-// The Portage MCP server: scan_payment_surface, plan_migration, get_reference_code and migrate_catalog, plus the
-// playbook as the `migrate` prompt (for agents without Claude Code skills, such as GitHub Copilot and Cursor).
-// verify_checkout and generate_report arrive in later phases.
+// The Portage MCP server: scan_payment_surface, plan_migration, get_reference_code, migrate_catalog,
+// setup_webhook_relay and verify_checkout, plus the playbook as the `migrate` prompt (for agents without Claude Code
+// skills, such as GitHub Copilot and Cursor).
 import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -12,11 +12,17 @@ import {
   PLAYBOOK,
   REFERENCES,
   referenceCode,
+  RelayError,
   renderCatalog,
   renderPlan,
+  renderRelaySetup,
   renderScan,
+  renderVerify,
   scanRepo,
   setMap,
+  setupWebhookRelay,
+  VerifyError,
+  verifyCheckout,
   type PaymentMap,
 } from "@portage/core";
 import map from "@portage/core/maps/stripe-paypal.json" with { type: "json" };
@@ -29,12 +35,21 @@ export const VERSION = "0.1.0";
 const INSTRUCTIONS = `Portage adds PayPal to apps that take payments with Stripe, and proves the result with a real PayPal sandbox payment.
 Workflow: scan_payment_surface, then plan_migration, then show the plan to the developer and wait for approval before editing anything. The full playbook is the "migrate" prompt.
 While editing, start from get_reference_code where a plan step names it, and look up every PayPal Server SDK method and model with the context-matic MCP server (APIMatic Context Plugin) first.
+After editing, run setup_webhook_relay once (it registers a PayPal sandbox webhook for the app and writes its settings), restart the app, then verify_checkout: a real sandbox payment in a browser, the webhooks, and a refund. Fix the first failing step and run it again until it passes.
 scan_payment_surface, plan_migration and get_reference_code only read. migrate_catalog is a dry run unless dryRun is false.`;
 
 const repoPath = z.string().min(1).describe("Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory.");
 
 function text(s: string) {
   return { type: "text" as const, text: s };
+}
+
+function appDirOf(repo: string, app: string | undefined): string {
+  const root = path.resolve(repo);
+  const scan = scanRepo(root);
+  const chosen = pickApp(scan, app);
+  if (app && !chosen) throw new Error(`No app called "${app}" in this repository.`);
+  return chosen ? path.join(root, chosen.root) : root;
 }
 
 function failure(err: unknown) {
@@ -140,15 +155,68 @@ export function createServer(): McpServer {
     },
     async ({ repoPath: p, app, dryRun, envFiles }) => {
       try {
-        const root = path.resolve(p);
-        const scan = scanRepo(root);
-        const chosen = pickApp(scan, app);
-        if (app && !chosen) throw new Error(`No app called "${app}" in this repository.`);
-        const appDir = chosen ? path.join(root, chosen.root) : root;
-        const result = await migrateCatalog({ appDir, dryRun, envFiles });
+        const result = await migrateCatalog({ appDir: appDirOf(p, app), dryRun, envFiles });
         return { content: [text(renderCatalog(result)), text(`Catalog data (JSON):\n${JSON.stringify(result)}`)] };
       } catch (err) {
         return err instanceof CatalogError ? { isError: true, content: [text(err.message)] } : failure(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "setup_webhook_relay",
+    {
+      title: "Set up PayPal sandbox webhooks for a local app",
+      description:
+        "PayPal can only send webhooks to a public HTTPS URL. This registers a webhook in the developer's own PayPal sandbox app that points at Portage's webhook relay, on a new private channel, for the capture and refund events, and writes PAYPAL_WEBHOOK_ID, PORTAGE_RELAY_URL and PORTAGE_RELAY_CHANNEL to the app's env file. verify_checkout then forwards the real events to the app. Idempotent: re-runs reuse the channel and the webhook. Sandbox only; reads PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENVIRONMENT and never shows their values. Restart the app afterwards so it reads the new PAYPAL_WEBHOOK_ID.",
+      inputSchema: {
+        repoPath,
+        app: z.string().optional().describe("Which app, when the repository has several (its folder or package name)."),
+        envFiles: z.array(z.string()).optional().describe("Env files to read credentials from, relative to the app folder. Default: .env.local, .env."),
+        writeTo: z.string().optional().describe("Env file to write the webhook settings to, relative to the app folder. Default: the first of envFiles. Use the file the app loads at runtime."),
+        relayUrl: z.string().optional().describe("A different relay (for example one deployed from Portage's render.yaml). Default: PORTAGE_RELAY_URL, else Portage's public relay."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async ({ repoPath: p, app, envFiles, writeTo, relayUrl }) => {
+      try {
+        const result = await setupWebhookRelay({ appDir: appDirOf(p, app), envFiles, writeTo, relayUrl });
+        return { content: [text(renderRelaySetup(result)), text(`Relay setup data (JSON):\n${JSON.stringify(result)}`)] };
+      } catch (err) {
+        return err instanceof RelayError ? { isError: true, content: [text(err.message)] } : failure(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "verify_checkout",
+    {
+      title: "Prove the PayPal checkout with a real sandbox payment",
+      description:
+        "Runs a real PayPal sandbox payment through the running app in a headless Chrome or Edge: clicks the PayPal button (JS SDK v6 or v5), logs in as the sandbox buyer and approves, then checks with PayPal (through the PayPal Server SDK) that the app captured the order. With the webhook relay set up it forwards PayPal's real PAYMENT.CAPTURE.COMPLETED webhook to the app, sends a forged copy that the app must reject, refunds the capture through PayPal and forwards the PAYMENT.CAPTURE.REFUNDED webhook. Returns a pass/fail report card with PayPal's order, capture and refund IDs, and saves screenshots under .portage/ in the app folder. Takes one to five minutes. Start the app first. Sandbox only; credentials are read from the app's env files and never shown.",
+      inputSchema: {
+        repoPath,
+        app: z.string().optional().describe("Which app, when the repository has several."),
+        appUrl: z.string().url().describe("Where the running app is, for example http://localhost:3000."),
+        checkoutPath: z.string().default("/").describe("The page with the PayPal button."),
+        webhookPath: z.string().optional().describe("The app's PayPal webhook route, for example /api/webhooks/paypal. Needed for the webhook checks."),
+        fill: z.record(z.string(), z.string()).optional().describe("Form fields to fill before clicking the PayPal button, as CSS selector → value, when the order needs them (for example {\"#email\": \"buyer@example.com\"})."),
+        buttonIndex: z.number().int().min(0).default(0).describe("Which PayPal button on the page, when there are several (0-based)."),
+        paidText: z.string().optional().describe("Text the app shows after a successful payment, for example \"Thanks for your order\"."),
+        refundedText: z.string().optional().describe("Text the app shows once the order is refunded, checked after the refund webhook."),
+        refund: z.boolean().default(true).describe("Refund the payment through PayPal and check the refund webhook."),
+        envFiles: z.array(z.string()).optional().describe("Env files with the PayPal and sandbox buyer settings, relative to the app folder or absolute. Default: .env.local, .env."),
+        headless: z.boolean().default(true).describe("false shows the browser window."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ repoPath: p, app, ...rest }) => {
+      try {
+        const result = await verifyCheckout({ appDir: appDirOf(p, app), ...rest });
+        const { log, ...data } = result;
+        return { isError: !result.ok, content: [text(renderVerify(result)), text(`Verify data (JSON):\n${JSON.stringify(data)}`), text(`Log:\n${log.join("\n")}`)] };
+      } catch (err) {
+        return err instanceof VerifyError ? { isError: true, content: [text(err.message)] } : failure(err);
       }
     },
   );

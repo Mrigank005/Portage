@@ -43,14 +43,15 @@ after(async () => {
   if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-const TOOLS = ["get_reference_code", "migrate_catalog", "plan_migration", "scan_payment_surface"];
+const TOOLS = ["get_reference_code", "migrate_catalog", "plan_migration", "scan_payment_surface", "setup_webhook_relay", "verify_checkout"];
+const WRITES = ["migrate_catalog", "setup_webhook_relay", "verify_checkout"];
 
 test("lists the tools, marks which only read, and has instructions that require approval and ContextMatic", async () => {
   const { tools } = await dev.listTools();
   assert.deepEqual(tools.map((t) => t.name).sort(), TOOLS);
   for (const t of tools) {
-    assert.equal(t.annotations?.readOnlyHint, t.name !== "migrate_catalog", t.name);
-    assert.deepEqual(t.inputSchema.required, t.name === "get_reference_code" ? ["name"] : ["repoPath"], t.name);
+    assert.equal(t.annotations?.readOnlyHint, !WRITES.includes(t.name), t.name);
+    assert.deepEqual(t.inputSchema.required, t.name === "get_reference_code" ? ["name"] : t.name === "verify_checkout" ? ["repoPath", "appUrl"] : ["repoPath"], t.name);
   }
   const plan = tools.find((t) => t.name === "plan_migration")!;
   assert.deepEqual((plan.inputSchema.properties as Record<string, { enum?: string[] }>).mode.enum, ["add", "replace"]);
@@ -142,6 +143,25 @@ test("migrate_catalog: a dry run reads the catalog from Standin and creates noth
     assert.match(live.content[0].text, /test keys/);
   } finally {
     await standin.close();
+  }
+});
+
+test("verify_checkout and setup_webhook_relay refuse live settings and report a stopped app as a failed step", async () => {
+  const envFile = path.join(tmp, "verify.env");
+  fs.writeFileSync(envFile, "PAYPAL_ENVIRONMENT=live\nPAYPAL_CLIENT_ID=id_value\nPAYPAL_CLIENT_SECRET=secret_value\n");
+  for (const name of ["verify_checkout", "setup_webhook_relay"]) {
+    const r = await call(dev, name, { repoPath: suite("brewbox-store"), appUrl: "http://127.0.0.1:9", envFiles: [envFile] });
+    assert.equal(r.isError, true, name);
+    assert.match(r.content[0].text, /sandbox/, name);
+  }
+  fs.writeFileSync(envFile, "PAYPAL_ENVIRONMENT=sandbox\nPAYPAL_CLIENT_ID=id_value\nPAYPAL_CLIENT_SECRET=secret_value\nPAYPAL_SANDBOX_BUYER_EMAIL=buyer@example.com\nPAYPAL_SANDBOX_BUYER_PASSWORD=pw_value\n");
+  const outDir = path.join(tmp, "verify-out");
+  for (const client of [dev, bundled]) {
+    const r = await call(client, "verify_checkout", { repoPath: suite("brewbox-store"), appUrl: "http://127.0.0.1:9", envFiles: [envFile], outDir });
+    assert.equal(r.isError, true);
+    assert.match(r.content[0].text, /FAIL \| App is running/);
+    const all = r.content.map((c) => c.text).join("\n");
+    for (const secret of ["id_value", "secret_value", "pw_value", "buyer@example.com"]) assert.ok(!all.includes(secret), `${secret} is never returned`);
   }
 });
 

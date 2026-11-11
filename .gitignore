@@ -40,3 +40,6 @@ next-env.d.ts
 
 # Built by `npm run build:plugin` (portage init builds it on setup)
 plugin/server/
+
+# verify_checkout evidence (screenshots, result.json)
+.portage/
