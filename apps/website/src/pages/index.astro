@@ -1,0 +1,197 @@
+---
+import Base from "../layouts/Base.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import Icon from "../components/Icon.astro";
+import ReportCard from "../components/ReportCard.astro";
+import StandinNotice from "../components/StandinNotice.astro";
+import TerminalReplay from "../components/TerminalReplay.astro";
+import { GITHUB, STATS, YOUTUBE_ID, blob, passed, runBySlug, runs, tree } from "../lib/repo";
+
+const hero = runBySlug("quill-agent-run")!;
+const replace = runBySlug("brewbox-replace-agent-run")!;
+const agentRuns = runs().filter((r) => r.kind === "agent");
+const tryCmds = `git clone ${GITHUB}
+cd Portage && npm install
+cp .env.example .env     # add your PayPal sandbox keys
+npx portage try quill`;
+---
+<Base title="Portage" description="Portage is a plugin for AI coding agents that adds PayPal to apps built on Stripe, writes it with verified PayPal SDK knowledge, and proves it with a real PayPal sandbox payment, webhooks and a refund." onHero>
+  <div class="mesh-hero">
+    <div class="hero">
+      <p class="eyebrow" style="color:var(--on-dark-mute)">For Claude Code, GitHub Copilot and Cursor</p>
+      <h1 class="display-xxl">Add PayPal to your Stripe app. Proven by a real payment.</h1>
+      <p class="sub body-lg">Portage turns the AI coding agent you already use into a PayPal integration engineer. It plans the change, writes it with verified PayPal SDK knowledge, and doesn't call the job done until a real sandbox payment, its webhooks and a refund have gone through your app.</p>
+      <div class="actions">
+        <a class="btn btn-primary-dark" href="/docs">Get started</a>
+        <a class="btn btn-secondary-dark" href="/runs">See the runs</a>
+      </div>
+      <div class="install"><code>npx portage try quill</code><button class="copy-btn" type="button" data-copy="npx portage try quill"><Icon name="copy" /><span>Copy</span></button></div>
+    </div>
+  </div>
+
+  <div class="terminal-wrap reveal">
+    <TerminalReplay run={hero} />
+  </div>
+
+  <section class="tight">
+    <div class="wrap" style="display:flex;flex-wrap:wrap;gap:12px 32px;align-items:center;justify-content:space-between">
+      <p class="caption muted" style="margin:0">Works inside <strong style="color:var(--ink);font-weight:500">Claude Code</strong>, <strong style="color:var(--ink);font-weight:500">GitHub Copilot</strong> and <strong style="color:var(--ink);font-weight:500">Cursor</strong>. No model to host, no API key to buy.</p>
+      <p class="caption muted" style="margin:0">Built on the <a href="https://github.com/apimatic/context-matic">APIMatic Context Plugin</a>, the PayPal Server SDK and PayPal JS SDK v6.</p>
+    </div>
+  </section>
+
+  <section class="dark">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Proof, not promises</p>
+        <h2 class="display-xl">We handed the job to AI agents and published everything they did.</h2>
+      </div>
+      <div class="stats reveal">
+        <a href={`/runs/${hero.slug}`}><span class="big">{hero.minutes} min</span><span class="label">From one pasted prompt to a verified PayPal integration, with no human help</span><span class="more">View the run</span></a>
+        <a href={`/runs/${hero.slug}`}><span class="big">{passed(hero)}/{hero.result.steps.length}</span><span class="label">Proof steps passed on the first run: payment, webhooks, forged webhook rejected, refund</span><span class="more">Read the report card</span></a>
+        <a href="/runs"><span class="big">2</span><span class="label">AI platforms, same result: Claude Code and GitHub Copilot running GPT 5.6</span><span class="more">Compare the runs</span></a>
+        <a href={tree("benchmark/real-repos")}><span class="big">{STATS.realRepos}</span><span class="label">Real open-source Stripe apps analysed: {STATS.realReposPlanned} planned, 1 recognised as out of scope</span><span class="more">See the benchmark</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2 class="display-xl">One request. Five steps. A payment at the end.</h2>
+        <p class="lead body-lg">You ask your agent to add PayPal. Portage takes it through the whole job, and the parts that must be exact are done by tools that check facts, not by the model's memory.</p>
+      </div>
+      <ol class="flow reveal">
+        <li><span class="n">01</span><h3>Read the app</h3><p>A structural scan maps your Stripe checkout, webhooks, refunds, order records and settings in seconds.</p><span class="tag">Deterministic</span></li>
+        <li><span class="n">02</span><h3>Plan the change</h3><p>Files, routes, money conversion and the decisions that need a person. Nothing is edited until you approve.</p><span class="tag">You approve</span></li>
+        <li><span class="n">03</span><h3>Write it</h3><p>Your agent writes the integration in your app's style, from tested building blocks, looking up every SDK call first.</p><span class="tag">AI + ContextMatic</span></li>
+        <li><span class="n">04</span><h3>Connect webhooks</h3><p>A private relay brings PayPal's real webhooks to the app on your laptop, byte for byte.</p><span class="tag">Automatic</span></li>
+        <li class="key"><span class="n">05</span><h3>Prove it</h3><p>A real browser pays with PayPal. The capture, webhooks and refund are confirmed with PayPal, and a forged webhook must be rejected.</p><span class="tag">Real sandbox payment</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <hr class="rule" />
+
+  <section>
+    <div class="wrap split stretch">
+      <div>
+        <p class="eyebrow">The proof step</p>
+        <h2 class="display-lg">Most AI tools say "done". Portage brings the inspector.</h2>
+        <p class="lead">The inspector is <code>verify_checkout</code>. It opens your app in Chrome or Edge, clicks the new PayPal button and pays as a sandbox buyer. Then it checks every claim with PayPal itself: the order was captured, PayPal's webhooks reached your app and passed signature checks, a forged webhook was turned away, and the refund landed.</p>
+        <p class="lead">If a step fails, the report says what to fix and the agent tries again. You get the report card, PayPal's order, capture and refund IDs, and screenshots.</p>
+        <p style="margin-top:28px"><a class="btn btn-primary" href={`/runs/${hero.slug}`}>See a full run <Icon name="arrow" /></a></p>
+      </div>
+      <div class="reveal fit">
+        <div class="fit-inner">
+          <div class="fit-scroll" tabindex="0" role="region" aria-label="Report card, scrollable"><ReportCard run={hero} compact /></div>
+          <p class="caption muted fit-note">The report card from <a href={`/runs/${hero.slug}`}>a run by Claude Code on a fresh clone</a>, unedited.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dark">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">Verified SDK knowledge</p>
+        <h2 class="display-lg">Your agent looks things up instead of guessing.</h2>
+        <p class="lead">PayPal's Server SDK v2 is newer than most models' training data. Portage is built on APIMatic's Context Plugin (ContextMatic), which gives the agent version-accurate documentation for the PayPal SDK.</p>
+        <ul class="steps" style="margin-top:32px">
+          <li><span class="step-marker">map</span><div><b>Every SDK name confirmed</b><span>Each PayPal method and model in Portage's map was looked up first; a test fails the build if one wasn't.</span></div></li>
+          <li><span class="step-marker">plan</span><div><b>Lookups planned per step</b><span>Every plan tells the agent which lookups to make before each piece of code, and the agents made them in every published run.</span></div></li>
+          <li><span class="step-marker">rule</span><div><b>No SDK code from memory</b><span>If ContextMatic isn't available, the agent stops and says so. Our first headless test did exactly that.</span></div></li>
+        </ul>
+      </div>
+      <div class="card-dark reveal">
+        <p class="eyebrow">The lookup that changed the design</p>
+        <h3 class="heading-lg" style="margin:0 0 12px">"Does the SDK verify webhook signatures?"</h3>
+        <p>ContextMatic's answer: the PayPal Server SDK has no webhook methods at all. So Portage verifies webhooks through PayPal's REST API, sending the raw body unchanged, instead of calling a method an AI would happily have invented.</p>
+        <p style="margin-top:20px"><a href={blob("docs/contextmatic-lookups.md")}>All {STATS.lookups} lookups and what each one changed</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Runs</p>
+        <h2 class="display-xl">Unaided, in both modes, on two AI platforms.</h2>
+        <p class="lead body-lg">Each run is published with its diff, report card, screenshots and PayPal IDs. Nothing is retouched.</p>
+      </div>
+      <div class="grid g3 reveal">
+        {agentRuns.map((r) => (
+          <a class="card card-link run-card" href={`/runs/${r.slug}`}>
+            <div class="top"><span class="badge b-pass"><Icon name="check" />{passed(r)}/{r.result.steps.length} passed</span><span class="badge b-soft">{r.mode === "add" ? "Add PayPal" : "Move to PayPal"}</span></div>
+            <h3>{r.title}</h3>
+            <div class="meter" aria-hidden="true">{r.result.steps.map((s) => <i class={s.status === "pass" ? "" : s.status} />)}</div>
+            <dl>
+              <dt>Agent</dt><dd>{r.agent}{r.model ? ` · ${r.model}` : ""}</dd>
+              <dt>App</dt><dd>{r.app} ({r.stack.split(",")[0]})</dd>
+              <dt>{r.minutes ? "Whole run" : "Proof step"}</dt><dd>{r.minutes ? `${r.minutes} min` : `${Math.round(r.result.durationMs / 1000)} s`}</dd>
+            </dl>
+            <span class="foot">Read the run</span>
+          </a>
+        ))}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:28px">
+        <StandinNotice />
+        <a class="btn btn-ghost" href="/runs">All runs <Icon name="arrow" /></a>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule" />
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Safe by design</p>
+        <h2 class="display-xl">Built for code that moves money.</h2>
+      </div>
+      <div class="grid g3 reveal">
+        <div class="card"><h3 class="heading-md">You approve first</h3><p>The plan comes before any edit. No answer is not approval: an agent that can't ask stops after the plan.</p></div>
+        <div class="card"><h3 class="heading-md">Money that never rounds</h3><p>Stripe's cents become PayPal's decimal strings exactly. Amounts PayPal can't represent are refused, not rounded.</p></div>
+        <div class="card"><h3 class="heading-md">Webhooks verified</h3><p>Every event is checked with PayPal before it's trusted, and the proof sends a forged one that must be rejected.</p></div>
+        <div class="card"><h3 class="heading-md">Sandbox only</h3><p>Portage refuses live keys, never prints a secret, and its relay holds no credentials.</p></div>
+        <div class="card"><h3 class="heading-md">Only your app changes</h3><p>Agents edit the app in the plan and nothing else, and never change code outside it to make tests pass.</p></div>
+        <div class="card"><h3 class="heading-md">Retries that can't double-charge</h3><p>Every PayPal call carries an idempotency key, so a dropped connection is retried safely.</p></div>
+      </div>
+    </div>
+  </section>
+
+  {YOUTUBE_ID && (
+    <section class="tight">
+      <div class="wrap">
+        <div class="section-head"><p class="eyebrow">Demo</p><h2 class="display-lg">See it in under three minutes.</h2></div>
+        <div class="video"><button type="button" data-yt={YOUTUBE_ID} style={`background-image:url(https://i.ytimg.com/vi/${YOUTUBE_ID}/hqdefault.jpg)`} aria-label="Play the demo video">Play the demo</button></div>
+      </div>
+    </section>
+  )}
+
+  <section class="dark">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">Try it</p>
+        <h2 class="display-lg">A verified PayPal integration in about ten minutes.</h2>
+        <p class="lead">You need Node.js, Chrome or Edge, a free PayPal developer account for sandbox keys, and one of the three agents. No Stripe account: the test apps run on Standin.</p>
+        <p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px"><a class="btn btn-primary-dark" href="/docs">Read the quickstart</a><a class="btn btn-secondary-dark" href={GITHUB}><Icon name="github" />View on GitHub</a></p>
+      </div>
+      <div>
+        <CodeBlock code={tryCmds} label="Terminal" />
+        <p class="caption" style="color:var(--on-dark-mute);margin-top:8px">Then open the folder in your agent and paste the prompt it prints.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+<script is:inline>
+  document.querySelectorAll("[data-yt]").forEach((b) => b.addEventListener("click", () => {
+    const f = document.createElement("iframe");
+    f.src = `https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1`;
+    f.title = "Portage demo";
+    f.allow = "autoplay; encrypted-media; picture-in-picture";
+    f.allowFullscreen = true;
+    b.replaceWith(f);
+  }));
+</script>

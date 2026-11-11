@@ -1,0 +1,108 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import { blob } from "../../lib/repo";
+const items: { id: string; problem: string; cause: string; fix: string }[] = [
+  {
+    id: "currency",
+    problem: "\"This seller doesn't accept payments in your currency\"",
+    cause: "The sandbox buyer is in a country whose account can't pay in the app's currency. In our runs a non-US default buyer hit this.",
+    fix: "In the PayPal dashboard (Sandbox), create a Personal account in the United States and put its email and password in PAYPAL_SANDBOX_BUYER_EMAIL and PAYPAL_SANDBOX_BUYER_PASSWORD, or in the PAYPAL_SANDBOX_US_BUYER_* pair, which is used first.",
+  },
+  {
+    id: "not-working",
+    problem: "\"Things don't appear to be working at the moment\" after the buyer logs in",
+    cause: "The create-order request sent an experience context without return and cancel URLs. PayPal requires both whenever one is sent.",
+    fix: "Set paymentSource.paypal.experienceContext.returnUrl and cancelUrl to the same pages as the old Stripe success and cancel URLs. Portage's plan and reference code already say so; this shows up when the code was written from memory.",
+  },
+  {
+    id: "contextmatic",
+    problem: "The agent stops and says ContextMatic isn't available",
+    cause: "The context-matic MCP server needs you to sign in. The playbook's rule is to stop rather than write PayPal SDK code from memory.",
+    fix: "Run /mcp (Claude Code) or start the server from your editor's MCP settings, sign in to context-matic (it's free), then tell the agent to carry on.",
+  },
+  {
+    id: "browser",
+    problem: "verify_checkout can't find a browser",
+    cause: "It drives an installed Google Chrome or Microsoft Edge, then tries Playwright's Chromium. None could be started.",
+    fix: "Install Chrome or Edge, or run npx playwright install chromium to give it a browser of its own.",
+  },
+  {
+    id: "form",
+    problem: "verify_checkout reports a page error or a missing button on checkout",
+    cause: "The order needs a form field (an email, a name) before the PayPal button works, and the check clicked it empty. The report includes the page's own error text.",
+    fix: "Pass fill: {\"#email\": \"buyer@example.com\"} (CLI: --fill \"#email=buyer@example.com\"). With several buttons on the page, buttonIndex picks one.",
+  },
+  {
+    id: "warn",
+    problem: "A warning instead of a pass on the PAYMENT.CAPTURE.COMPLETED webhook",
+    cause: "PayPal's sandbox didn't send that event. The report asks PayPal's webhook events API and quotes what it found. In the Brewbox tuning run, only the refund event was ever listed.",
+    fix: "Usually nothing: a capture route that records the payment itself doesn't depend on that event. Re-run if you want to see it arrive.",
+  },
+  {
+    id: "forged",
+    problem: "\"Forged webhook is rejected\" fails",
+    cause: "The app answered 2xx to a copy of a real event with a changed event ID. It isn't verifying the webhook with PayPal, or isn't verifying the raw body.",
+    fix: "Verify every webhook with POST /v1/notifications/verify-webhook-signature before trusting it, passing the raw request body unchanged (read it as text, not parsed JSON). Portage's paypal-webhook reference code does this.",
+  },
+  {
+    id: "webhook-id",
+    problem: "Webhooks verify in verify_checkout but fail after restarting the app",
+    cause: "The app started before PAYPAL_WEBHOOK_ID was written, or it loads a different env file than setup_webhook_relay wrote to.",
+    fix: "Restart the app after setup_webhook_relay, and use writeTo (CLI: --write-to) to name the file the app actually loads.",
+  },
+  {
+    id: "relay-slow",
+    problem: "The first webhook step is slow",
+    cause: "The public relay runs on a free Render instance. Portage wakes it before it starts, and an uptime monitor pings it, but a cold start can still take a little while.",
+    fix: "Wait. Or run your own relay: see the relay page.",
+  },
+  {
+    id: "webhook-limit",
+    problem: "PayPal says you have too many webhooks",
+    cause: "A PayPal sandbox app allows 10. Each app Portage sets up uses one, and setup is idempotent, so re-runs reuse it.",
+    fix: "Delete unused webhooks in the dashboard under Apps & Credentials → your app → Webhooks.",
+  },
+  {
+    id: "gitbash",
+    problem: "In Git Bash, --webhook /api/... fails or looks wrong",
+    cause: "Git Bash rewrites arguments that start with a slash into Windows paths.",
+    fix: "Set MSYS_NO_PATHCONV=1 for the command. verify says so when it sees a Windows-looking path.",
+  },
+  {
+    id: "env-flag",
+    problem: "node: --env-file is not allowed here",
+    cause: "Node.js takes --env-file for itself.",
+    fix: "Portage's flag is --env <file>.",
+  },
+  {
+    id: "refused",
+    problem: "Portage says the repository isn't supported",
+    cause: "A refusal is deliberate when the code is outside what Portage can change safely, such as subscriptions only, Stripe Connect, or a language other than TypeScript or JavaScript.",
+    fix: "The report names the reason code and the lines it found. See the list on the how it works page; Portage changes nothing when it refuses.",
+  },
+];
+---
+<Docs title="Troubleshooting" description="Fixes for the problems people hit most: sandbox buyer errors, webhooks, ContextMatic sign-in, browsers and forms.">
+  <p class="eyebrow">Help</p>
+  <h1 class="display-lg">Troubleshooting</h1>
+  <p class="lead">Almost everything here is a problem we hit ourselves while building Portage, and most are now handled in the plan, the reference code or the proof step's own messages. If <code>verify_checkout</code> fails, read the reason on the failing step first: it says what to fix.</p>
+
+  <nav aria-label="Problems" class="card" style="margin-top:28px">
+    <ul style="margin:0;padding-left:20px">
+      {items.map((i) => <li><a href={`#${i.id}`}>{i.problem}</a></li>)}
+    </ul>
+  </nav>
+
+  {items.map((i) => (
+    <section>
+      <h2 id={i.id} style="font-size:20px;font-weight:500">{i.problem}</h2>
+      <p><strong>Why:</strong> {i.cause}</p>
+      <p><strong>Fix:</strong> {i.fix}</p>
+    </section>
+  ))}
+
+  <div class="callout" style="margin-top:40px">
+    <p class="heading-sm" style="margin:0">Still stuck?</p>
+    <p>Open an issue on <a href={blob("").replace(/\/blob\/main\/$/, "")}>GitHub</a> with the report card's text. Check anything you attach from <code>.portage/</code> first: it includes screenshots of your sandbox checkout.</p>
+  </div>
+</Docs>

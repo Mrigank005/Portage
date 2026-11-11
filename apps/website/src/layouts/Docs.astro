@@ -1,0 +1,33 @@
+---
+import Base from "./Base.astro";
+import { DOCS } from "../lib/docs";
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+const flat = DOCS.flatMap((g) => g.pages);
+const i = flat.findIndex((p) => p.href === path);
+const prev = i > 0 ? flat[i - 1] : null;
+const next = i >= 0 && i < flat.length - 1 ? flat[i + 1] : null;
+---
+<Base title={title} description={description}>
+  <div class="docs-shell">
+    <nav class="docs-nav" aria-label="Documentation">
+      {DOCS.map((g) => (
+        <>
+          <h4>{g.group}</h4>
+          <ul>{g.pages.map((p) => <li><a href={p.href} aria-current={p.href === path ? "page" : undefined}>{p.title}</a></li>)}</ul>
+        </>
+      ))}
+    </nav>
+    <article class="prose">
+      <slot />
+      <nav class="page-nav" aria-label="Previous and next page">
+        {prev ? <a href={prev.href}><small>Previous</small>{prev.title}</a> : <span></span>}
+        {next ? <a href={next.href} style="text-align:right"><small>Next</small>{next.title}</a> : <span></span>}
+      </nav>
+    </article>
+  </div>
+</Base>

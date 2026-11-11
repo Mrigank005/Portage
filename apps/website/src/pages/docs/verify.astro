@@ -1,0 +1,64 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import ReportCard from "../../components/ReportCard.astro";
+import StatusBadge from "../../components/StatusBadge.astro";
+import { runBySlug } from "../../lib/repo";
+const run = runBySlug("quill-agent-run")!;
+const steps: [string, string][] = [
+  ["App is running", "The checkout page answers. verify_checkout waits up to 30 seconds for an app that's still starting."],
+  ["Webhook relay connected", "The relay answers, and forwarding starts after the newest event already on the channel."],
+  ["Checkout form filled", "Optional: fill takes CSS selector → value pairs for forms the order needs, such as Quill's email field."],
+  ["PayPal button is on the page", "A JS SDK v6 <paypal-button>, or the v5 button iframe."],
+  ["PayPal checkout opens", "A popup or a redirect with an order ID, which PayPal confirms belongs to the app's own credentials."],
+  ["Sandbox buyer approves", "Logs in as your sandbox buyer and approves. PayPal's known error pages come back with their fix."],
+  ["App captures the payment", "Asked of PayPal, not the app: getOrder must show a capture."],
+  ["App shows the order as paid", "The page the buyer lands on shows the paid text you gave."],
+  ["PAYMENT.CAPTURE.COMPLETED webhook", "PayPal's real event reaches the app through the relay, and the app answers 2xx after verifying it."],
+  ["Refund through PayPal", "A full refund with refundCapturedPayment, as a merchant would make from the PayPal dashboard."],
+  ["PAYMENT.CAPTURE.REFUNDED webhook", "Forwarded to the app, which answers 2xx; the page then shows the refunded text."],
+  ["PayPal shows the capture refunded", "getCapturedPayment returns REFUNDED."],
+  ["Forged webhook is rejected", "A copy of a real event with a changed event ID, sent with PayPal's original signature, must get a 4xx."],
+];
+---
+<Docs title="Proving it: verify_checkout" description="How Portage proves a PayPal integration works: a real sandbox payment in a browser, PayPal's real webhooks, a forged webhook and a refund.">
+  <p class="eyebrow">Concepts</p>
+  <h1 class="display-lg">Proving it: <code style="font-size:.8em">verify_checkout</code></h1>
+  <p class="lead">Code that looks right isn't the bar. A migration is finished when a real PayPal sandbox payment goes through your running app, PayPal's webhooks reach it, a forged webhook bounces off, and a refund comes back. <code>verify_checkout</code> checks every one of those, and the agent keeps fixing until they pass.</p>
+
+  <h2>What it does</h2>
+  <p>The agent starts your app, then calls <code>verify_checkout</code> with its URL, the page with the PayPal button, the webhook route, and the text the app shows once an order is paid and once it's refunded. It drives the Chrome or Edge you already have (through <code>playwright-core</code>, so there's no browser download) and checks results with the PayPal Server SDK, using your app's own sandbox credentials.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Step</th><th>How it's checked</th></tr></thead>
+      <tbody>{steps.map(([s, h]) => <tr><td class="step" style="color:var(--ink)">{s}</td><td>{h}</td></tr>)}</tbody>
+    </table>
+  </div>
+
+  <h2>The report card</h2>
+  <p>Every step gets a status and a reason that says what to fix. Here is the report from <a href={`/runs/${run.slug}`}>a headless Claude Code run on a fresh clone</a>, exactly as the tool wrote it:</p>
+  <ReportCard run={run} />
+  <div class="grid g2" style="margin-top:24px">
+    <div class="card"><p style="margin:0"><StatusBadge status="pass" /></p><p>The step did what it should, checked with PayPal wherever PayPal can answer.</p></div>
+    <div class="card"><p style="margin:0"><StatusBadge status="fail" /></p><p>Something in the app needs fixing. The reason names what was expected and what happened.</p></div>
+    <div class="card"><p style="margin:0"><StatusBadge status="warn" /></p><p>PayPal's sandbox, not your app, didn't do its part. The report quotes PayPal's own records.</p></div>
+    <div class="card"><p style="margin:0"><StatusBadge status="skip" /></p><p>The step didn't apply, for example the refund steps when you turn the refund off.</p></div>
+  </div>
+  <p>Alongside the steps you get PayPal's order, capture and refund IDs, the webhook deliveries with the app's answers, and screenshots plus <code>result.json</code> in <code>.portage/verify-&lt;time&gt;/</code> in the app folder. The playbook has the agent fix the first failing step and run it again.</p>
+
+  <h2>Why WARN exists</h2>
+  <p>In one Brewbox run PayPal's sandbox never generated <code>PAYMENT.CAPTURE.COMPLETED</code>: PayPal's own webhook events API listed only the refund event. Failing the app for that would be wrong. Now <code>verify_checkout</code> waits a minute, carries on with the refund, looks again at the end, and if the event still hasn't come it asks PayPal's events API and reports a warning with what PayPal said. A capture route that records the payment itself, as Portage's plan requires, doesn't depend on that event.</p>
+
+  <h2>Run it from a terminal</h2>
+  <p>The agent calls the MCP tool, but you can run the same check yourself:</p>
+  <CodeBlock code={`npx portage relay setup path/to/app\nnpx portage verify path/to/app --url http://localhost:3000 --webhook /api/webhooks/paypal \\\n  --paid-text "Payment received" --refunded-text "Order refunded"`} />
+  <p>Add <code>--fill "#email=buyer@example.com"</code> for checkout forms, <code>--headed</code> to watch the browser, and <code>--json</code> for the raw result. All options are in the <a href="/docs/cli">CLI reference</a>.</p>
+
+  <h2>Confirming with PayPal's own tools</h2>
+  <p>If PayPal's MCP server (the PayPal Agent Toolkit) is connected to the agent, the playbook has it look up the same order and refund with <code>get_order</code> and <code>get_refund</code>, quote what PayPal returned, and check that the order's <code>custom_id</code> is the app's own order ID. It's optional and never blocks: <code>verify_checkout</code> has already checked the same IDs with PayPal.</p>
+
+  <div class="callout" style="margin-top:32px">
+    <p class="heading-sm" style="margin:0">Sandbox only</p>
+    <p>Credentials and the buyer login come from the app's env files and never appear in the output. Use a US sandbox buyer: see <a href="/docs/troubleshooting">Troubleshooting</a>.</p>
+  </div>
+</Docs>

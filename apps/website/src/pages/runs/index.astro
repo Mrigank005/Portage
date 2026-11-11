@@ -1,0 +1,73 @@
+---
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import StandinNotice from "../../components/StandinNotice.astro";
+import { passed, runs, seconds, tree } from "../../lib/repo";
+const all = runs();
+const agent = all.filter((r) => r.kind === "agent");
+const tuning = all.filter((r) => r.kind === "tuning");
+---
+<Base title="Runs" description="Every Portage run we published: real PayPal sandbox payments, real webhooks and refunds, with report cards, diffs and screenshots.">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow">Runs</p>
+      <h1 class="display-xl">Every run, published.</h1>
+      <p class="lead">Each run below ended with <code>verify_checkout</code>: a real PayPal sandbox payment in a real browser, PayPal's real webhooks, a forged webhook that had to be rejected, and a refund. Every page shows the report card, the screenshots and the full diff, exactly as the run produced them.</p>
+      <div style="margin-top:24px"><StandinNotice /></div>
+    </div>
+  </div>
+
+  <section class="tight">
+    <div class="wrap">
+      <div class="section-head" style="margin-bottom:20px">
+        <h2 class="display-md">Agent runs</h2>
+        <p class="lead">An AI agent given one prompt, with no help from us.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Run</th><th>Agent</th><th>Mode</th><th>App</th><th class="num">Proof steps</th><th class="num">Whole run</th><th></th></tr></thead>
+          <tbody>
+            {agent.map((r) => (
+              <tr>
+                <td style="white-space:normal;min-width:200px"><a href={`/runs/${r.slug}`}>{r.title}</a></td>
+                <td class="nowrap">{r.agent}{r.model ? ` · ${r.model}` : ""}</td>
+                <td class="nowrap">{r.mode === "add" ? "Add PayPal" : "Move to PayPal"}</td>
+                <td class="nowrap">{r.app}</td>
+                <td class="num"><span class="badge b-pass"><Icon name="check" />{passed(r)}/{r.result.steps.length}</span></td>
+                <td class="num">{r.minutes ? `${r.minutes} min` : "not timed"}</td>
+                <td class="nowrap"><a href={`/runs/${r.slug}`}>View</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head" style="margin:56px 0 20px">
+        <h2 class="display-md">Tuning runs</h2>
+        <p class="lead">The runs we used to tune Portage against the real PayPal sandbox, following the playbook step by step. What they found is now built into Portage.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Run</th><th>Mode</th><th>App</th><th class="num">Proof steps</th><th class="num">Proof step time</th><th></th></tr></thead>
+          <tbody>
+            {tuning.map((r) => (
+              <tr>
+                <td style="white-space:normal;min-width:200px"><a href={`/runs/${r.slug}`}>{r.title}</a></td>
+                <td class="nowrap">{r.mode === "add" ? "Add PayPal" : "Move to PayPal"}</td>
+                <td class="nowrap">{r.app}</td>
+                <td class="num"><span class="badge b-pass"><Icon name="check" />{passed(r)}/{r.result.steps.length}</span></td>
+                <td class="num">{seconds(r.result.durationMs)} s</td>
+                <td class="nowrap"><a href={`/runs/${r.slug}`}>View</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout" style="margin-top:48px">
+        <p class="heading-sm" style="margin:0">On code we didn't write</p>
+        <p>Portage's scanner and planner also ran on five real open-source Stripe apps, pinned to exact commits: four planned, one correctly recognised as out of scope (subscription-only billing). <a href={tree("benchmark/real-repos")}>See the benchmark</a>.</p>
+      </div>
+    </div>
+  </section>
+</Base>

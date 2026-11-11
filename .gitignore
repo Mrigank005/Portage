@@ -46,3 +46,8 @@ plugin/server/
 
 # Trial copies of the suite apps made by `portage try` (with real sandbox settings in their env files)
 trial/
+
+# Website build output and the evidence it copies from benchmark/runs
+apps/website/dist/
+apps/website/.astro/
+apps/website/public/evidence/

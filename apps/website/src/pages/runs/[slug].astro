@@ -1,0 +1,88 @@
+---
+import { Code } from "astro:components";
+import Base from "../../layouts/Base.astro";
+import Icon from "../../components/Icon.astro";
+import ReportCard from "../../components/ReportCard.astro";
+import StandinNotice from "../../components/StandinNotice.astro";
+import { blob, passed, runs, seconds, tree, type Run } from "../../lib/repo";
+
+export function getStaticPaths() {
+  return runs().map((run) => ({ params: { slug: run.slug }, props: { run } }));
+}
+const { run } = Astro.props as { run: Run };
+const r = run.result;
+const webhooks = r.webhooks.filter((w) => w.eventType);
+---
+<Base title={run.title} description={`${run.agent}${run.model ? ` (${run.model})` : ""} ${run.mode === "add" ? "added PayPal to" : "moved"} ${run.app}${run.mode === "replace" ? " from Stripe to PayPal" : ""}: ${passed(run)} of ${r.steps.length} proof steps passed with a real PayPal sandbox payment.`}>
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="crumbs"><a href="/runs">Runs</a> / {run.kind === "agent" ? "Agent run" : "Tuning run"}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <span class="badge b-pass"><Icon name="check" />{passed(run)}/{r.steps.length} steps passed</span>
+        <span class="badge b-soft">{run.mode === "add" ? "Add PayPal" : "Move to PayPal"}</span>
+        {run.kind === "agent" && run.firstTry && <span class="badge b-tag">First try</span>}
+      </div>
+      <h1 class="display-xl">{run.title}</h1>
+      <p class="lead">{run.summary}</p>
+    </div>
+  </div>
+
+  <section class="tight">
+    <div class="wrap">
+      <dl class="facts">
+        <div><dt>Agent</dt><dd>{run.agent}{run.model ? ` · ${run.model}` : ""}</dd></div>
+        <div><dt>App</dt><dd>{run.app}<br /><span class="caption muted">{run.stack}</span></dd></div>
+        <div><dt>{run.minutes ? "Whole run" : "Driven by"}</dt><dd>{run.minutes ? `${run.minutes} minutes` : run.driver}</dd></div>
+        <div><dt>Proof step</dt><dd>{seconds(r.durationMs)} s in {r.browser === "msedge" ? "Edge" : "Chrome"}</dd></div>
+      </dl>
+      {run.minutes && <p class="caption muted" style="margin-top:10px">{run.driver}.</p>}
+
+      <h2 class="display-md" style="margin:48px 0 16px">What stood out</h2>
+      <ul class="steps">
+        {run.highlights.map((h, i) => <li><span class="step-marker">{String(i + 1).padStart(2, "0")}</span><div><span style="color:var(--ink);font-size:16px">{h}</span></div></li>)}
+      </ul>
+
+      <h2 class="display-md" style="margin:40px 0 8px">Report card</h2>
+      <p class="lead" style="margin:0 0 20px">Written by <code>verify_checkout</code> at the end of the run, unedited.</p>
+      <ReportCard run={run} />
+
+      <div class="grid g3" style="margin-top:24px">
+        <div class="card"><p class="eyebrow">PayPal order</p><p class="mono" style="color:var(--ink);overflow-wrap:anywhere">{r.paypalOrderId}</p><p class="caption muted" style="margin-top:6px">{r.amount}</p></div>
+        <div class="card"><p class="eyebrow">Capture</p><p class="mono" style="color:var(--ink);overflow-wrap:anywhere">{r.captureId}</p></div>
+        <div class="card"><p class="eyebrow">Refund</p><p class="mono" style="color:var(--ink);overflow-wrap:anywhere">{r.refundId}</p></div>
+      </div>
+      {webhooks.length > 0 && <p class="caption muted" style="margin-top:12px">Webhooks forwarded through the relay: {webhooks.map((w) => `${w.eventType} (the app answered ${w.status})`).join(", ")}.</p>}
+
+      <h2 class="display-md" style="margin:56px 0 16px">Screenshots</h2>
+      <div class="gallery">
+        {run.screenshots.map((s) => (
+          <figure class="shot">
+            <a href={s.src}><img src={s.src} alt={s.caption} loading="lazy" width="1280" height="900" /></a>
+            <figcaption>{s.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
+
+      {run.diff && (
+        <>
+          <h2 class="display-md" style="margin:56px 0 16px">The change</h2>
+          <details class="diff">
+            <summary>
+              <span>{run.diffStats.files} files</span><span class="add">+{run.diffStats.added}</span><span class="del">−{run.diffStats.removed}</span>
+              <span style="color:var(--on-dark-mute)">Show the full diff (lockfile left out)</span>
+            </summary>
+            <div class="diff-body"><Code code={run.diff} lang="diff" theme="github-dark-dimmed" /></div>
+          </details>
+        </>
+      )}
+
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:40px">
+        <StandinNotice />
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a class="btn btn-ghost" href={tree(`benchmark/runs/${run.slug}`)}>Files on GitHub <Icon name="external" /></a>
+          <a class="btn btn-primary" href={run.readme}>Full write-up <Icon name="external" /></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

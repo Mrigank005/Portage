@@ -1,0 +1,89 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import Icon from "../../components/Icon.astro";
+import { blob } from "../../lib/repo";
+import { brk, mapEvents, mapTotals, mapCallCounts } from "../../lib/data";
+const status = {
+  mapped: { cls: "b-pass", icon: "check", word: "Mapped" },
+  "needs-human": { cls: "b-warn", icon: "warn", word: "Needs a person" },
+} as const;
+const refusals = [
+  ["LANGUAGE_UNSUPPORTED", "Stripe is used only from Python, Ruby, PHP, Go, Java/Kotlin or C#. The report lists the lines it found."],
+  ["NO_STRIPE", "No Stripe payment code at all."],
+  ["FRAMEWORK_UNSUPPORTED", "Fastify, NestJS, Koa, Hono, Remix, SvelteKit, Nuxt, Astro, or no web framework."],
+  ["STRIPE_CONNECT", "Connect accounts, transfers or application fees: adding PayPal would bypass the platform's payment splits."],
+  ["ELEMENTS_ONLY", "A custom card form (Stripe Elements and PaymentIntents) with no Checkout."],
+  ["SUBSCRIPTIONS_ONLY", "Subscription billing only."],
+  ["NO_ONE_TIME_CHECKOUT", "Stripe code, but no Checkout session in payment mode."],
+];
+---
+<Docs title="How it works" description="Portage's seven steps, from scanning a Stripe app to a pull request with a passing PayPal sandbox payment.">
+  <p class="eyebrow">Concepts</p>
+  <h1 class="display-lg">How it works</h1>
+  <p class="lead">Portage splits a migration into the parts that must be exact and the parts that need judgement. Code handles the exact parts: finding every Stripe call, the translation rules, the money maths and the proof. Your coding agent handles the judgement, writing the change in your app's own style, and Portage checks the result with a real PayPal payment.</p>
+
+  <ol class="steps" style="margin-top:32px">
+    <li><span class="step-marker">01</span><div><b>Scan</b><span><code>scan_payment_surface</code> parses the code (not text search) and finds the Stripe client, Checkout sessions, webhook handlers and the app functions they call, refunds, the checkout button, stored Stripe IDs and settings.</span></div></li>
+    <li><span class="step-marker">02</span><div><b>Plan</b><span><code>plan_migration</code> applies the Stripe→PayPal map to the scan: files, routes, webhook events, order fields, money, settings, items for a person, and the ContextMatic lookups for each step.</span></div></li>
+    <li><span class="step-marker">03</span><div><b>Approve</b><span>The agent shows you the plan. Nothing is edited until you approve it, and no answer is not approval.</span></div></li>
+    <li><span class="step-marker">04</span><div><b>Edit</b><span>The agent writes the integration with the official PayPal Server SDK, starting from Portage's tested reference code and looking up every SDK call through ContextMatic first.</span></div></li>
+    <li><span class="step-marker">05</span><div><b>Copy the catalog</b><span>In replace mode, <code>migrate_catalog</code> copies Stripe products to PayPal: a dry run first, idempotent on re-runs.</span></div></li>
+    <li><span class="step-marker">06</span><div><b>Prove it</b><span><code>setup_webhook_relay</code> connects PayPal's webhooks, then <code>verify_checkout</code> makes a real sandbox payment, checks the webhooks, sends a forged one and refunds. The agent fixes what fails and runs it again.</span></div></li>
+    <li><span class="step-marker">07</span><div><b>Report</b><span>The agent writes what changed, the report card with PayPal's IDs, its ContextMatic lookups and what still needs a person, ready for the pull request.</span></div></li>
+  </ol>
+
+  <h2>Deterministic where it matters</h2>
+  <p>Scan and plan are ordinary code, not model output: the same repository always gives the same scan and the same plan. Both only read files. The tests check that file modification times don't change, plant secrets in env files to check none appear in the output, and run on our test apps and on <a href="/benchmark">five real open-source Stripe apps</a>.</p>
+  <p>A call counts as Stripe when its receiver provably comes from the <code>stripe</code> package, whether it's created directly, lazily or through a factory, or imported under another name from the app's own module. Path aliases like <code>@/lib/stripe</code> resolve through the app's own <code>tsconfig.json</code>.</p>
+
+  <h2>The map is data</h2>
+  <p>Every translation lives in one file, <a href={blob("packages/core/maps/stripe-paypal.json")}><code>stripe-paypal.json</code></a>: {mapTotals.calls} Stripe calls, {mapTotals.events} webhook events, Checkout parameters and object fields, each with its PayPal counterpart and a status. The planner has no PayPal knowledge of its own. Every one of the {mapTotals.sdkMethods} SDK methods and {mapTotals.sdkModels} models it names was confirmed through <a href="/docs/contextmatic">ContextMatic</a>, and a test fails on any name that wasn't.</p>
+  <p>Of the {mapTotals.calls} Stripe calls, {mapCallCounts.mapped} map directly, {mapCallCounts.catalog} go through the catalog copy, {mapCallCounts["needs-human"]} need a person's decision, and {mapCallCounts.blocker} block a migration outright. The webhook events:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Stripe event</th><th>PayPal event</th><th>Status</th></tr></thead>
+      <tbody>
+        {mapEvents.map((e) => {
+          const s = status[e.status as keyof typeof status] ?? status["needs-human"];
+          return (
+            <tr>
+              <td><code set:html={brk(e.stripe)} /></td>
+              <td>{e.paypal ? <code set:html={brk(e.paypal)} /> : <span class="muted">None</span>}</td>
+              <td class="nowrap"><span class={`badge ${s.cls}`}><Icon name={s.icon} />{s.word}</span></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+  <p class="caption muted" style="margin-top:10px">Subscription events are listed for a person: Portage moves one-time Checkout payments, and subscriptions are on its roadmap.</p>
+
+  <h2>Decisions the plan makes from your code</h2>
+  <ul>
+    <li><strong>Your layout.</strong> New routes follow the app's structure: App Router route files, Pages Router API files, or routes next to the Express ones. The PayPal client goes next to the Stripe client.</li>
+    <li><strong>One fulfilment path.</strong> The code your Stripe webhook already calls is reused for PayPal. If it's written inline in the webhook, the plan extracts it into a shared function first, so Stripe and PayPal can't drift apart. Refunds get the same treatment.</li>
+    <li><strong>Order records.</strong> Orders gain <code>paymentProvider</code>, <code>paypalOrderId</code> and <code>paypalCaptureId</code> next to the Stripe fields, so refunds can find the PayPal capture.</li>
+    <li><strong>The server decides prices.</strong> The create-order route reads prices exactly as the Stripe route does, never from the browser.</li>
+    <li><strong>Refund totals.</strong> PayPal refund events carry one refund's amount, while Stripe's <code>charge.refunded</code> carries a running total. The plan says how to bridge it.</li>
+    <li><strong>Name clashes</strong> are called out, for example an app function already called <code>createOrder</code>.</li>
+  </ul>
+
+  <h2>Money, without rounding</h2>
+  <p>Stripe amounts are integer minor units (<code>2400</code>); PayPal's are decimal strings (<code>"24.00"</code>). Portage's money helper converts between them with integer arithmetic and each provider's own decimal rules, across the 25 currencies PayPal accepts. It refuses rather than rounds: 10.45 HUF has no PayPal amount, because PayPal takes forints whole. Round trips are tested on thousands of amounts.</p>
+
+  <h2>Two modes</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3 class="heading-md" style="margin-top:0">Add PayPal (default)</h3><p>Cards stay on Stripe. PayPal, Venmo and Pay Later appear at checkout and flow into the same orders, fulfilment and refunds. The catalog stays on Stripe.</p></div>
+    <div class="card"><h3 class="heading-md" style="margin-top:0">Move to PayPal</h3><p>New payments go through PayPal only. The catalog is copied to PayPal, the Stripe checkout is removed, and Stripe stays to refund orders it already took.</p></div>
+  </div>
+
+  <h2>When Portage says no</h2>
+  <p>A clear refusal is a correct result. When a repository is outside what Portage can do safely, the scan says why and nothing is changed:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Reason</th><th>Meaning</th></tr></thead>
+      <tbody>{refusals.map(([c, m]) => <tr><td><code>{c}</code></td><td>{m}</td></tr>)}</tbody>
+    </table>
+  </div>
+  <p>Things Portage can work around are listed for a person instead: subscriptions or Elements next to Checkout, promotion codes, automatic tax, Pages Router apps, currencies PayPal doesn't accept, and prices PayPal can't represent. Saved cards and existing subscribers can't be moved by code, and the report says so.</p>
+</Docs>

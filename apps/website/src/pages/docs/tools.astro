@@ -1,0 +1,89 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import Icon from "../../components/Icon.astro";
+import { blob } from "../../lib/repo";
+import { REF, typeOf } from "../../lib/data";
+const fmt = (v: unknown) => (v === undefined ? "" : JSON.stringify(v));
+---
+<Docs title="MCP tools" description="Reference for Portage's MCP server: six tools, the migrate prompt and the reference files, generated from the server itself.">
+  <p class="eyebrow">Reference</p>
+  <h1 class="display-lg">MCP tools</h1>
+  <p class="lead">Portage's MCP server (<code>{REF.server.name}</code> {REF.server.version}) gives your agent {REF.tools.length} tools and one prompt. This page is generated from the server's own answer to <code>tools/list</code> when the site is built, so it always matches the code.</p>
+
+  <nav aria-label="Tools on this page" class="card" style="margin-top:28px">
+    <p class="eyebrow" style="margin:0 0 10px">On this page</p>
+    <ul style="margin:0;padding-left:20px">
+      {REF.tools.map((t) => <li><a href={`#${t.name}`}><code>{t.name}</code></a> <span class="muted">· {t.title}</span></li>)}
+      <li><a href="#migrate">The <code>migrate</code> prompt</a></li>
+      <li><a href="#references">Reference files</a></li>
+    </ul>
+  </nav>
+
+  <h2>Server instructions</h2>
+  <p>What the server tells every agent when it connects:</p>
+  <div class="callout"><p style="white-space:pre-line;margin:0">{REF.instructions}</p></div>
+
+  {REF.tools.map((t) => {
+    const props = Object.entries(t.inputSchema.properties ?? {});
+    const required = new Set(t.inputSchema.required ?? []);
+    const ro = t.annotations.readOnlyHint;
+    return (
+      <section>
+        <h2 id={t.name}><code style="font-size:.78em">{t.name}</code></h2>
+        <p class="heading-sm" style="margin-top:8px;color:var(--ink)">{t.title}</p>
+        <p style="display:flex;flex-wrap:wrap;gap:8px">
+          {ro ? <span class="badge b-pass"><Icon name="shield" />Read-only</span> : <span class="badge b-soft"><Icon name="info" />Uses the PayPal sandbox</span>}
+          {t.annotations.idempotentHint && <span class="badge b-soft">Idempotent</span>}
+          {t.annotations.destructiveHint === false && !ro && <span class="badge b-soft">Not destructive</span>}
+        </p>
+        <p>{t.description}</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Input</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              {props.map(([name, p]) => (
+                <tr>
+                  <td><code>{name}</code>{required.has(name) && p.default === undefined ? <><br /><span class="caption" style="color:var(--ink)">required</span></> : null}</td>
+                  <td><code style="font-size:.8em">{typeOf(p)}</code>{p.default !== undefined && <><br /><span class="caption muted">default {fmt(p.default)}</span></>}</td>
+                  <td>{p.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  })}
+
+  {REF.prompts.map((p) => (
+    <section>
+      <h2 id={p.name}>The <code style="font-size:.78em">{p.name}</code> prompt</h2>
+      <p>{p.description} Claude Code loads the same text as the <code>portage-migrate</code> skill; GitHub Copilot and Cursor can use the prompt (<code>/mcp.portage.migrate</code> in VS Code). A test keeps the two identical.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Argument</th><th>Description</th></tr></thead>
+          <tbody>{(p.arguments ?? []).map((a) => <tr><td><code>{a.name}</code>{a.required && <><br /><span class="caption" style="color:var(--ink)">required</span></>}</td><td>{a.description}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p>Read the full playbook: <a href={blob("plugin/skills/portage-migrate/SKILL.md")}>SKILL.md</a>.</p>
+    </section>
+  ))}
+
+  <h2 id="references">Reference files</h2>
+  <p><code>get_reference_code</code> serves small, tested files for the parts of a PayPal integration that must be exact. TypeScript files are typechecked against the real PayPal packages, and the money helper and webhook verifier are tested against the PayPal sandbox. The agent adapts names, paths and style; the behaviour stays. Server and React files also come as JavaScript (ES modules or CommonJS).</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>What it is</th><th>Needs</th></tr></thead>
+      <tbody>
+        {REF.references.map((r) => (
+          <tr>
+            <td><code>{r.name}</code><br /><span class="caption muted">{r.filename}</span></td>
+            <td>{r.purpose}<br /><span class="caption muted">{r.placement}</span></td>
+            <td><span class="caption">{r.packages !== "none" ? r.packages : "No packages"}</span>{r.settings !== "none" && <><br /><span class="caption muted">{r.settings}</span></>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="caption muted" style="margin-top:16px">Source: <a href={blob("packages/mcp-server/src/server.ts")}>packages/mcp-server/src/server.ts</a>.</p>
+</Docs>

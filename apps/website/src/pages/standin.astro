@@ -1,0 +1,48 @@
+---
+import Base from "../layouts/Base.astro";
+import { blob } from "../lib/repo";
+---
+<Base title="Standin" description="Why Portage's test apps run on Standin, a local Stripe-compatible server we built, and what that means for the results.">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow">Standin</p>
+      <h1 class="display-xl">Why there's a fake Stripe in here.</h1>
+      <p class="lead">Portage is built in India, where Stripe is currently invite-only. Our invite hasn't arrived yet. Rather than wait by the letterbox, we built one.</p>
+    </div>
+  </div>
+
+  <section class="tight">
+    <div class="wrap">
+      <div class="grid g2 equal">
+        <div class="card prose" style="max-width:none">
+          <h2 style="margin-top:0">Meet Standin</h2>
+          <p><strong>Standin</strong> is a small local server that speaks just enough of the Stripe API for Portage's test apps: products, prices, Checkout sessions, payments, refunds and their webhooks.</p>
+          <ul>
+            <li>The test apps use the <strong>official <code>stripe</code> Node SDK</strong>, unmodified, pointed at <code>localhost</code> instead of Stripe.</li>
+            <li>It serves a simple test checkout page and sends webhooks <strong>signed the same way Stripe signs them</strong>, so the SDK's own signature check passes.</li>
+            <li>Every response is <strong>checked against Stripe's public OpenAPI specification</strong>. A control test breaks valid objects on purpose and requires the check to reject them.</li>
+            <li>Anything it doesn't cover answers with Stripe's own "Unrecognized request URL" error.</li>
+          </ul>
+        </div>
+        <div class="card-dark">
+          <p class="eyebrow" style="margin:0">What's in the test suite</p>
+          <ul class="steps" style="margin-top:20px">
+            <li><span class="step-marker">next</span><div><b>Brewbox</b><span>A Next.js coffee shop: catalog from Stripe, Checkout, signed webhook, orders, receipts, admin refunds.</span></div></li>
+            <li><span class="step-marker">expr</span><div><b>Quill</b><span>An Express app selling credit packs: inline prices, line items, credits granted and taken back on refund.</span></div></li>
+            <li><span class="step-marker">py</span><div><b>Ledgerline</b><span>A Flask app that Portage must turn away with a clear reason, and does.</span></div></li>
+          </ul>
+          <p style="margin-top:8px"><a href={blob("docs/standin.md")}>How Standin works</a></p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:24px">
+        <h2 class="heading-lg" style="margin:0 0 16px">What it means for the results</h2>
+        <div class="claim-cols">
+          <p>The Stripe side of every published run is Standin; the PayPal side is the real PayPal sandbox, with real payments, real webhooks and real refunds. We never claim anything was verified against live Stripe, and every results page says so.</p>
+          <p>On your own repository none of this applies: Portage reads your code, and the catalog copy uses your project's Stripe <strong>test</strong> keys. Standin exists so anyone can try Portage without a Stripe account, which turned out to be rather handy.</p>
+          <p>For the record, PayPal's sandbox worked from India on the first try.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

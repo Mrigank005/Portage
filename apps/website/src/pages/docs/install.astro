@@ -1,0 +1,61 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import { GITHUB } from "../../lib/repo";
+const agents = [
+  {
+    id: "claude",
+    name: "Claude Code",
+    cmd: "npx portage init --agent claude",
+    does: "Builds Portage's MCP server and installs the Claude Code plugin portage@portage: the portage-migrate skill plus the portage and context-matic MCP servers. If the claude command isn't on your PATH, it prints the two /plugin commands to run inside Claude Code instead.",
+    next: ["Restart Claude Code.", "Run /mcp and sign in to context-matic.", "Ask: \"Add PayPal to this app with Portage.\""],
+  },
+  {
+    id: "copilot",
+    name: "GitHub Copilot",
+    cmd: "npx portage init --agent copilot --project path/to/your/repo",
+    does: "Builds Portage's MCP server and adds the portage and context-matic servers to your repository's .vscode/mcp.json, keeping any servers already there.",
+    next: ["Open your repository in VS Code and switch Copilot Chat to Agent mode.", "Start both servers and sign in to context-matic.", "Ask Copilot to add PayPal with Portage, or run /mcp.portage.migrate."],
+  },
+  {
+    id: "cursor",
+    name: "Cursor",
+    cmd: "npx portage init --agent cursor --project path/to/your/repo",
+    does: "Builds Portage's MCP server and adds the portage and context-matic servers to your repository's .cursor/mcp.json, keeping any servers already there.",
+    next: ["Open your repository in Cursor and enable both servers in Settings → MCP.", "Sign in to context-matic.", "Ask the agent to add PayPal with Portage."],
+  },
+];
+---
+<Docs title="Use it on your repo" description="Set Portage up in Claude Code, GitHub Copilot or Cursor and add PayPal to your own Stripe app.">
+  <p class="eyebrow">Get started</p>
+  <h1 class="display-lg">Use it on your repo</h1>
+  <p class="lead">Portage works on Node.js apps that take one-time payments with Stripe Checkout, on Next.js or Express, in TypeScript or JavaScript. Set it up once from your Portage folder, then ask your agent for PayPal.</p>
+
+  <h2>Set up your agent</h2>
+  <div class="light-tabs">
+    <div class="tabs" role="tablist" aria-label="Coding agent">
+      {agents.map((a, i) => <button class="tab" role="tab" type="button" id={`tab-${a.id}`} aria-controls={`panel-${a.id}`} aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1}>{a.name}</button>)}
+    </div>
+    {agents.map((a, i) => (
+      <div role="tabpanel" id={`panel-${a.id}`} aria-labelledby={`tab-${a.id}`} hidden={i !== 0}>
+        <CodeBlock code={a.cmd} />
+        <p>{a.does}</p>
+        <ol>{a.next.map((n) => <li>{n}</li>)}</ol>
+      </div>
+    ))}
+  </div>
+
+  <h2>Add your sandbox settings</h2>
+  <p>Put your PayPal sandbox settings in the app's own env file (for example <code>.env.local</code> or <code>.env</code>): <code>PAYPAL_CLIENT_ID</code>, <code>PAYPAL_CLIENT_SECRET</code>, <code>PAYPAL_ENVIRONMENT=sandbox</code>, and a sandbox buyer's login for the proof step. Portage only ever uses the sandbox, and in replace mode the catalog copy reads your Stripe <strong>test</strong> key. Your agent adds the settings it needs to your example env file with placeholder values only.</p>
+
+  <h2>What happens next</h2>
+  <p>Your agent scans the app and shows you the plan. Nothing is edited until you approve. Then it writes the integration, connects PayPal webhooks through Portage's relay and runs <code>verify_checkout</code> against your running app until every step passes. Review the change with <code>git diff</code>, along with the report card and screenshots in <code>.portage/</code>, which you should keep out of git.</p>
+
+  <h2>Two modes</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3 class="heading-md">Add PayPal (default)</h3><p>PayPal joins your checkout next to Stripe. PayPal payments flow into the same order, fulfilment and refund code your Stripe payments already use.</p></div>
+    <div class="card"><h3 class="heading-md">Move to PayPal</h3><p>New payments go through PayPal only. Your Stripe catalog is copied to PayPal, the Stripe checkout is removed, and Stripe stays to refund the orders it already took.</p></div>
+  </div>
+
+  <p style="margin-top:32px">Prefer to read the code first? Everything is on <a href={GITHUB}>GitHub</a> under the MIT licence.</p>
+</Docs>

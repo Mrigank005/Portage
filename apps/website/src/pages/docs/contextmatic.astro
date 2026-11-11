@@ -1,0 +1,72 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import { blob } from "../../lib/repo";
+import { inline, lookups, mapTotals } from "../../lib/data";
+const all = lookups();
+// "2026-11-10: building the map (Phase 2)" becomes "Building the map"
+const title = (phase: string) => {
+  const t = phase.replace(/^\d{4}-\d{2}-\d{2}( and \d+)?: /, "").replace(/\s*\(Phase \d+\)$/, "").replace(/`([^`]+)`/g, "<code>$1</code>");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+const phases = [...new Set(all.map((l) => l.phase))];
+const byTool = all.reduce<Record<string, number>>((a, l) => {
+  const t = l.tool.replace(/`/g, "").replace(/\s*\(.*\)/, "");
+  a[t] = (a[t] ?? 0) + 1;
+  return a;
+}, {});
+---
+<Docs title="ContextMatic lookups" description="How Portage uses APIMatic's Context Plugin to write PayPal SDK code from facts, not memory, and every lookup that shaped it.">
+  <p class="eyebrow">Concepts</p>
+  <h1 class="display-lg">ContextMatic lookups</h1>
+  <p class="lead">PayPal's Server SDK v2 is newer than most models' training data, and in payments a wrong guess becomes a bug. So Portage writes PayPal code from facts: every SDK method and model comes from <a href="https://github.com/apimatic/context-matic">ContextMatic</a>, APIMatic's Context Plugin, before a line is written.</p>
+
+  <dl class="facts" style="margin-top:32px">
+    <div><dt>Lookups while building</dt><dd>{all.length}</dd></div>
+    <div><dt>SDK methods confirmed</dt><dd>{mapTotals.sdkMethods}</dd></div>
+    <div><dt>SDK models confirmed</dt><dd>{mapTotals.sdkModels}</dd></div>
+    <div><dt>Unconfirmed names allowed</dt><dd>0</dd></div>
+  </dl>
+
+  <h2>Used in two places</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3 class="heading-md" style="margin-top:0">To build Portage</h3>
+      <p>The repository registers ContextMatic for every coding agent we develop with, and its <a href={blob("AGENTS.md")}><code>AGENTS.md</code></a> requires that all PayPal SDK code comes from lookups. Every method and model in the Stripe→PayPal map was confirmed this way, and a test fails on any name that wasn't.</p>
+    </div>
+    <div class="card">
+      <h3 class="heading-md" style="margin-top:0">Inside Portage</h3>
+      <p>The plugin ships with ContextMatic registered. Every plan step lists the lookups to make before writing its code, for example <code>endpoint_search createOrder</code> and <code>model_search PurchaseUnitRequest</code> before the create-order route, and the playbook has the agent log them in the pull request.</p>
+    </div>
+  </div>
+
+  <h2>Lookups that changed the design</h2>
+  <ul>
+    <li><strong>The SDK has no webhook methods</strong> (lookup 7). Instead of letting an agent invent one, the map plans a direct call to <code>POST /v1/notifications/verify-webhook-signature</code>, and Portage's reference code does exactly that.</li>
+    <li><strong>Quantity is a string</strong> (lookup 9). <code>ItemRequest.quantity</code> is a whole number sent as a string, a classic silent bug when it's guessed.</li>
+    <li><strong><code>customId</code>, not <code>invoiceId</code></strong> (lookup 8). Stripe's <code>client_reference_id</code> maps to <code>customId</code>, which is meant for reconciliation and hidden from the payer; <code>invoiceId</code> must be unique per merchant.</li>
+    <li><strong>Refund totals</strong> (lookup 16). <code>SellerPayableBreakdown.totalRefundedAmount</code> closed a gap the plan had flagged, so refunds are recorded once even when the route and the webhook both report them.</li>
+  </ul>
+  <p>A lookup that failed is recorded too (18): the client setup then came from the official sample another lookup returned. The reference code is typechecked against the real SDK, so a wrong name would fail the build. None did.</p>
+
+  {phases.map((phase) => (
+    <>
+      <h2 set:html={title(phase)} />
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="num">#</th><th>Lookup</th><th>What it confirmed</th><th>Where it went</th></tr></thead>
+          <tbody>
+            {all.filter((l) => l.phase === phase).map((l) => (
+              <tr>
+                <td class="num">{l.n}</td>
+                <td><span set:html={inline(l.tool)} /><br /><span class="muted" set:html={inline(l.query)} /></td>
+                <td set:html={inline(l.confirmed)} />
+                <td set:html={inline(l.where)} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  ))}
+  <p class="caption muted" style="margin-top:16px">All lookups use <code>language=typescript</code> and <code>key=paypal</code>. By tool: {Object.entries(byTool).map(([t, n]) => `${t} ${n}`).join(" · ")}. Source: <a href={blob("docs/contextmatic-lookups.md")}>docs/contextmatic-lookups.md</a>.</p>
+</Docs>

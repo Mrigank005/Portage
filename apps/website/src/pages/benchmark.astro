@@ -1,0 +1,67 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+import StandinNotice from "../components/StandinNotice.astro";
+import { realRepos } from "../lib/data";
+import { tree } from "../lib/repo";
+const repos = realRepos();
+const planned = repos.filter((r) => !r.refused).length;
+const refused = repos.length - planned;
+---
+<Base title="Benchmark" description="Portage's scanner and planner run on five real open-source Stripe apps we didn't write: four planned, one correctly refused.">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow">Benchmark</p>
+      <h1 class="display-xl">Five real apps we didn't write.</h1>
+      <p class="lead">A tool that only works on its own test apps proves little. So Portage's scanner and planner also run on public open-source Stripe apps, pinned to exact commits. {planned} get a full plan. {refused} is correctly refused, with the reason.</p>
+    </div>
+  </div>
+
+  <section class="tight">
+    <div class="wrap">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Repository</th><th>Framework</th><th class="num">Stripe calls</th><th>Result</th><th>Details</th></tr></thead>
+          <tbody>
+            {repos.map((r) => (
+              <tr>
+                <td style="min-width:200px"><a href={r.repo}><b style="font-weight:500">{r.name}</b></a><br /><span class="caption muted">commit <code>{r.commit}</code></span></td>
+                <td style="min-width:160px">{r.framework}</td>
+                <td class="num">{r.calls}</td>
+                <td style="min-width:240px">
+                  {r.refused
+                    ? <span class="badge b-refused"><Icon name="shield" />Refused</span>
+                    : <span class="badge b-pass"><Icon name="check" />Planned</span>}
+                  <br /><span class="caption" style="color:var(--ink-secondary)">{r.result.replace(/^Planned: |^Refused \(([A-Z_]+)\): /, (_m, c) => (c ? `${c}: ` : ""))}</span>
+                </td>
+                <td class="nowrap"><a href={r.scan}>Scan</a> · <a href={r.plan}>Plan</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid g2" style="margin-top:32px">
+        <div class="card">
+          <h3 class="heading-md" style="margin-top:0">What this shows</h3>
+          <p>The scanner follows real-world code: monorepos with a dozen apps, path aliases, checkouts hidden in server actions, and webhook handlers that call helper functions. Each plan lists files, routes, event mapping and the items a person must decide.</p>
+        </div>
+        <div class="card">
+          <h3 class="heading-md" style="margin-top:0">What it doesn't</h3>
+          <p>These are scans and plans: the repositories are parsed, never installed or run, and no PayPal changes are made to them. Real PayPal payments are in the <a href="/runs">runs</a>, on our test apps.</p>
+        </div>
+      </div>
+
+      <h2 class="heading-lg" style="margin-top:56px">Why each one</h2>
+      <ul class="why">
+        {repos.map((r) => <li><b>{r.name}</b><span>{r.why}</span></li>)}
+      </ul>
+
+      <h2 class="heading-lg" style="margin-top:56px">Why a refusal counts as a pass</h2>
+      <p class="body-lg" style="max-width:68ch">saas-starter sells subscriptions only. Portage migrates one-time Checkout payments, so it says so and changes nothing, instead of producing a plausible-looking change it can't stand behind. For a tool that touches payments, knowing when to stop is a feature.</p>
+
+      <p style="margin-top:32px">Reproduce it: <code>npm run benchmark:real</code> clones each repository at its pinned commit and rewrites the results in <a href={tree("benchmark/real-repos")}>benchmark/real-repos</a>.</p>
+      <StandinNotice />
+    </div>
+  </section>
+</Base>

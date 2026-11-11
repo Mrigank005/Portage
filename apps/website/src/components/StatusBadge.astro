@@ -1,0 +1,16 @@
+---
+// Test outcome badge: always an icon and a word, never colour alone.
+import Icon from "./Icon.astro";
+interface Props {
+  status: "pass" | "fail" | "warn" | "skip";
+}
+const { status } = Astro.props;
+const map = {
+  pass: { icon: "check", word: "Passed", cls: "b-pass" },
+  fail: { icon: "cross", word: "Failed", cls: "b-fail" },
+  warn: { icon: "warn", word: "Warning", cls: "b-warn" },
+  skip: { icon: "skip", word: "Skipped", cls: "b-skip" },
+} as const;
+const s = map[status];
+---
+<span class={`badge ${s.cls}`}><Icon name={s.icon} />{s.word}</span>

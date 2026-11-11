@@ -1,0 +1,93 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+import { blob } from "../lib/repo";
+const rules: { title: string; body: string; check: string }[] = [
+  {
+    title: "Sandbox only",
+    body: "Portage never touches live PayPal or live Stripe. The webhook, catalog and proof tools refuse to run unless PAYPAL_ENVIRONMENT is sandbox, and catalog copy accepts Stripe test keys only.",
+    check: "Each tool throws a clear error on any other environment.",
+  },
+  {
+    title: "Nothing changes without approval",
+    body: "Scan and plan only read files. The agent shows the plan and waits: no answer is not approval. In your own repository it edits only the app the plan is for, and never Portage's own code or tests.",
+    check: "The playbook's rules, plus a test that the skill and the MCP prompt are identical.",
+  },
+  {
+    title: "Secrets stay put",
+    body: "Scan and plan never open real env files; example files contribute key names, never values. The tools that need credentials read only the settings they use, and never print them. The proof's evidence holds screenshots and a result file, not keys.",
+    check: "Tests plant secrets in env files and fail if any appear in the output.",
+  },
+  {
+    title: "Read-only means read-only",
+    body: "scan_payment_surface, plan_migration and get_reference_code only read, and say so in their MCP annotations. migrate_catalog is a dry run unless you say otherwise, and is idempotent when it isn't.",
+    check: "Tests check that file modification times don't change.",
+  },
+  {
+    title: "The integration Portage writes is safe too",
+    body: "The plan has the agent verify every PayPal webhook with PayPal's verification API using the raw body, keep prices on the server, convert money without rounding, and use PayPal-Request-Id for idempotent calls. verify_checkout sends a forged webhook to check it.",
+    check: "A real event with a changed ID must get a 4xx, or the proof fails.",
+  },
+];
+---
+<Base title="Security" description="How Portage keeps your keys, your repository and your payments safe: sandbox only, approval before edits, secrets never printed, and a webhook relay that holds no credentials.">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow">Security</p>
+      <h1 class="display-xl">Built for code that touches payments.</h1>
+      <p class="lead">An agent that edits checkout code needs guardrails more than most. Portage's are enforced by code and tests, not just by asking the model nicely.</p>
+    </div>
+  </div>
+
+  <section class="tight">
+    <div class="wrap">
+      <div class="grid g2 center-last">
+        {rules.map((r) => (
+          <div class="card">
+            <h3 class="heading-md" style="margin-top:0"><Icon name="shield" /> {r.title}</h3>
+            <p>{r.body}</p>
+            <p class="caption" style="color:var(--ink-mute);margin:14px 0 0"><b style="font-weight:500;color:var(--ink)">How it's enforced:</b> {r.check}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="split" style="margin-top:56px;grid-template-columns:1fr 1fr">
+        <div class="prose">
+          <h2 style="margin-top:0">The webhook relay</h2>
+          <p>The relay is the one piece of Portage that runs on someone else's server, so it's built to know as little as possible.</p>
+          <ul>
+            <li>It holds no credentials and never verifies, changes or acts on events.</li>
+            <li>It receives only PayPal sandbox events for the channel you register.</li>
+            <li>Channels are 24 random characters. They work like a private link: anyone who has one can read that app's sandbox webhooks, so keep it out of git. Portage generates a new one per app.</li>
+            <li>Events live in memory for at most a day, 100 per channel, and are never written to disk.</li>
+            <li>Your app does the real verification, with your keys, on your machine.</li>
+          </ul>
+          <p>Prefer not to use ours? <a href="/docs/relay">Run your own</a>: it's one Node.js file.</p>
+        </div>
+        <div class="prose">
+          <h2 style="margin-top:0">Supply chain</h2>
+          <ul>
+            <li><code>npm audit</code> reports zero vulnerabilities across the repository.</li>
+            <li>Portage doesn't bundle PayPal's Agent Toolkit: its dependency tree adds seven npm advisories. Catalog copy makes the same documented API call directly instead.</li>
+            <li>The proof step drives the browser you already have, using Chrome or Edge.</li>
+            <li>Every PayPal SDK name Portage relies on was confirmed through ContextMatic, and a test fails on any name that wasn't.</li>
+            <li>In add mode your Stripe code keeps working: Portage's plan lists what stays as it is.</li>
+            <li>The website is static pages built from the repository's own files.</li>
+            <li>MIT licensed, and the whole thing is on <a href="https://github.com/Mrigank005/Portage">GitHub</a>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:40px">
+        <h2 class="heading-lg" style="margin:0 0 12px">What we don't claim</h2>
+        <div class="claim-cols">
+          <p>Portage's test suite runs on <a href="/standin">Standin</a>, a Stripe-compatible server we built, so we make no claim of having verified results against live Stripe. The PayPal side of every run is the real sandbox.</p>
+          <p>Portage can't move saved cards or existing subscribers, because code can't. The report says so rather than guessing.</p>
+          <p>It moves one-time Checkout payments on Next.js and Express in TypeScript or JavaScript. Subscriptions, Stripe Connect and other languages are refused with a reason, and nothing is changed.</p>
+        </div>
+      </div>
+
+      <p class="caption muted" style="margin-top:40px">See the <a href={blob("AGENTS.md")}>repository's own rules</a> for how we work on Portage, and the <a href="/docs/configuration">configuration</a> page for exactly which settings each tool reads.</p>
+    </div>
+  </section>
+</Base>

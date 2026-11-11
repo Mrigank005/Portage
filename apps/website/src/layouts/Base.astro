@@ -1,0 +1,159 @@
+---
+import "../styles/global.css";
+import Icon from "../components/Icon.astro";
+import { GITHUB } from "../lib/repo";
+
+interface Props {
+  title: string;
+  description: string;
+  /** The page opens with the Onyx Drift mesh, so the header sits on it, transparent. */
+  onHero?: boolean;
+}
+const { title, description, onHero = false } = Astro.props;
+const fullTitle = title === "Portage" ? "Portage: add PayPal to your Stripe app, proven by a real payment" : `${title} · Portage`;
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+const nav = [
+  { href: "/docs", label: "Docs" },
+  { href: "/runs", label: "Runs" },
+  { href: "/benchmark", label: "Benchmark" },
+  { href: "/security", label: "Security" },
+  { href: "/standin", label: "Standin" },
+];
+const isCurrent = (href: string) => (href === "/docs" ? path.startsWith("/docs") : path.startsWith(href));
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/og.png", Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+    <script is:inline>document.documentElement.classList.add("js");</script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class={`site-header${onHero ? " on-hero" : ""}`}>
+      <nav class="nav" aria-label="Main">
+        <a class="wordmark" href="/"><i aria-hidden="true"></i>Portage</a>
+        <ul class="nav-links" id="nav-links">
+          {nav.map((n) => <li><a href={n.href} aria-current={isCurrent(n.href) ? "page" : undefined}>{n.label}</a></li>)}
+          <li><a href={GITHUB}>GitHub</a></li>
+        </ul>
+        <a class={`btn btn-sm nav-gh ${onHero ? "btn-primary-dark" : "btn-primary"}`} href="/docs">Get started</a>
+        <button class={`btn btn-sm menu-btn ${onHero ? "btn-secondary-dark" : "btn-ghost"}`} type="button" aria-expanded="false" aria-controls="nav-links"><Icon name="menu" /><span>Menu</span></button>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="cols">
+          <div class="brand">
+            <a class="wordmark" href="/"><i aria-hidden="true"></i>Portage</a>
+            <p style="max-width:40ch;margin:16px 0 0">Adds PayPal to apps that take payments with Stripe, and proves it with a real PayPal sandbox payment. A plugin for Claude Code, GitHub Copilot and Cursor.</p>
+          </div>
+          <div class="stack">
+            <div>
+              <h4>Project</h4>
+              <ul>
+                <li><a href={GITHUB}>GitHub repository</a></li>
+                <li><a href={`${GITHUB}/blob/main/docs/contextmatic-lookups.md`}>ContextMatic lookups</a></li>
+                <li><a href="/standin">Standin</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4>Built with</h4>
+              <ul>
+                <li><a href="https://github.com/apimatic/context-matic">APIMatic Context Plugin</a></li>
+                <li><a href="https://developer.paypal.com/">PayPal developer platform</a></li>
+                <li><a href="https://render.com/">Render</a></li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <ul>
+              <li><a href="/docs">Quickstart</a></li>
+              <li><a href="/docs/install">Install</a></li>
+              <li><a href="/docs/tools">MCP tools</a></li>
+              <li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+              <li><a href="/runs">Runs</a></li>
+              <li><a href="/benchmark">Benchmark</a></li>
+              <li><a href="/security">Security</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="legal">
+          <span>MIT licensed. Sandbox only: Portage never touches live PayPal or Stripe keys.</span>
+          <span>Built for the PayPal AI Hackathon, 2026.</span>
+        </div>
+      </div>
+    </footer>
+    <script is:inline>
+      // Label table cells from their column headings, for the stacked table layout on phones
+      document.querySelectorAll(".table-wrap table:not(.report)").forEach((t) => {
+        const heads = [...t.querySelectorAll("thead th")].map((h) => h.textContent.trim());
+        t.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => td.setAttribute("data-label", heads[i] || "")));
+      });
+      // Copy buttons
+      document.addEventListener("click", async (e) => {
+        const b = e.target.closest("[data-copy]");
+        if (!b) return;
+        try {
+          await navigator.clipboard.writeText(b.getAttribute("data-copy"));
+          const label = b.querySelector("span");
+          const was = label ? label.textContent : "";
+          if (label) label.textContent = "Copied";
+          setTimeout(() => { if (label) label.textContent = was; }, 1600);
+        } catch {}
+      });
+      // Tabs
+      document.querySelectorAll("[role=tablist]").forEach((list) => {
+        const tabs = [...list.querySelectorAll("[role=tab]")];
+        const select = (t) => {
+          tabs.forEach((x) => {
+            const on = x === t;
+            x.setAttribute("aria-selected", String(on));
+            x.tabIndex = on ? 0 : -1;
+            const p = document.getElementById(x.getAttribute("aria-controls"));
+            if (p) p.hidden = !on;
+          });
+        };
+        tabs.forEach((t, i) => {
+          t.addEventListener("click", () => select(t));
+          t.addEventListener("keydown", (e) => {
+            if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+            const n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+            select(n); n.focus();
+          });
+        });
+      });
+      // Mobile menu
+      const mb = document.querySelector(".menu-btn");
+      const links = document.getElementById("nav-links");
+      if (mb && links) mb.addEventListener("click", () => {
+        const open = links.classList.toggle("open");
+        mb.setAttribute("aria-expanded", String(open));
+      });
+      // Reveal on first view
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } }), { rootMargin: "0px 0px -8% 0px" });
+        document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+      } else document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+    </script>
+  </body>
+</html>

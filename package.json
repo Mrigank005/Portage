@@ -11,6 +11,7 @@
     "packages/mcp-server",
     "packages/cli",
     "apps/webhook-relay",
+    "apps/website",
     "suite/brewbox-store",
     "suite/quill-saas"
   ],
@@ -24,7 +25,9 @@
     "build:plugin": "npm run build -w packages/mcp-server",
     "portage": "portage",
     "reference:embed": "node scripts/embed-reference.mjs",
-    "skill:sync": "node --import tsx scripts/sync-skill.mts"
+    "skill:sync": "node --import tsx scripts/sync-skill.mts",
+    "website:dev": "npm run dev -w apps/website",
+    "website:build": "npm run build -w apps/website"
   },
   "engines": {
     "node": ">=20.9"

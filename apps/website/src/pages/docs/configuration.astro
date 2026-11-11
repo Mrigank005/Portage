@@ -1,0 +1,88 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import { blob } from "../../lib/repo";
+const groups: { title: string; note: string; rows: [string, string, string][] }[] = [
+  {
+    title: "PayPal sandbox",
+    note: "From the PayPal developer dashboard, with Sandbox selected: Apps & Credentials.",
+    rows: [
+      ["PAYPAL_CLIENT_ID", "Required", "Your sandbox app's Client ID. Public: it's also rendered into checkout pages."],
+      ["PAYPAL_CLIENT_SECRET", "Required", "Your sandbox app's Secret. Read by the server and Portage's tools, never printed."],
+      ["PAYPAL_ENVIRONMENT", "Required", "sandbox. Portage's tools refuse anything else."],
+    ],
+  },
+  {
+    title: "Written for you",
+    note: "setup_webhook_relay (or portage relay setup) writes these to the app's env file. Restart the app afterwards.",
+    rows: [
+      ["PAYPAL_WEBHOOK_ID", "Written", "The PayPal webhook that points at the relay. Your app verifies webhooks with it."],
+      ["PORTAGE_RELAY_URL", "Written", "The relay to use. Default: https://portage-relay.onrender.com."],
+      ["PORTAGE_RELAY_CHANNEL", "Written", "The app's private relay channel. Anyone with it can read that app's sandbox webhooks, so keep it out of git."],
+    ],
+  },
+  {
+    title: "Sandbox buyer, for verify_checkout",
+    note: "Testing Tools → Sandbox Accounts: a Personal account's email and password, from View/Edit account.",
+    rows: [
+      ["PAYPAL_SANDBOX_BUYER_EMAIL", "Required for the proof", "The sandbox buyer verify_checkout logs in as."],
+      ["PAYPAL_SANDBOX_BUYER_PASSWORD", "Required for the proof", "That buyer's password."],
+      ["PAYPAL_SANDBOX_US_BUYER_EMAIL / _PASSWORD", "Optional", "Used first when set. A US buyer avoids \"This seller doesn't accept payments in your currency\"."],
+    ],
+  },
+  {
+    title: "Stripe side",
+    note: "The test apps run on Standin, so the defaults in .env.example work without a Stripe account.",
+    rows: [
+      ["STRIPE_SECRET_KEY", "Replace mode", "Read by migrate_catalog to copy products and prices. Test keys only (sk_test_…)."],
+      ["STRIPE_API_BASE", "Test apps only", "Points the Stripe SDK at Standin (http://localhost:4242). Remove it for a real repository."],
+      ["STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET", "Test apps only", "Used by the test apps themselves, not by Portage."],
+    ],
+  },
+];
+---
+<Docs title="Configuration" description="The settings Portage reads, where it looks for them, and the files it writes.">
+  <p class="eyebrow">Reference</p>
+  <h1 class="display-lg">Configuration</h1>
+  <p class="lead">Portage reads settings from your app's own env files, uses only the ones it needs, and never prints their values. It works with the PayPal sandbox only.</p>
+
+  <h2>Where settings come from</h2>
+  <p>The tools read the app's <code>.env.local</code>, then <code>.env</code>. Pass <code>envFiles</code> to a tool, or <code>--env &lt;file&gt;</code> to the CLI, to use others. <code>setup_webhook_relay</code> writes to the first of those files unless you name one with <code>writeTo</code>; pick the file your app loads at runtime. Scan and plan never open real env files at all: example files such as <code>.env.example</code> contribute key names only.</p>
+
+  {groups.map((g) => (
+    <section>
+      <h2>{g.title}</h2>
+      <p>{g.note}</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Needed</th><th>What it's for</th></tr></thead>
+          <tbody>{g.rows.map(([k, need, what]) => <tr><td><code>{k}</code></td><td class="caption">{need}</td><td>{what}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+  ))}
+
+  <h2>A minimal env file</h2>
+  <CodeBlock label=".env" code={`PAYPAL_ENVIRONMENT=sandbox\nPAYPAL_CLIENT_ID=<your sandbox client id>\nPAYPAL_CLIENT_SECRET=<your sandbox secret>\nPAYPAL_SANDBOX_BUYER_EMAIL=<a US personal sandbox account>\nPAYPAL_SANDBOX_BUYER_PASSWORD=<its password>`} />
+  <p>The full template, with comments, is <a href={blob(".env.example")}><code>.env.example</code></a>. Never commit the real file.</p>
+
+  <h2>Files Portage writes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>File</th><th>Written by</th><th>Commit it?</th></tr></thead>
+      <tbody>
+        <tr><td><code>.portage/verify-&lt;time&gt;/</code></td><td><code>verify_checkout</code>: screenshots and <code>result.json</code></td><td>No: add <code>.portage/</code> to <code>.gitignore</code></td></tr>
+        <tr><td><code>portage.catalog.json</code></td><td><code>migrate_catalog</code>: the Stripe → PayPal product mapping and one-time prices as PayPal amounts</td><td>Yes: the create-order route reads prices from it</td></tr>
+        <tr><td>Your env file</td><td><code>setup_webhook_relay</code>: the three webhook settings above</td><td>Never</td></tr>
+        <tr><td><code>.vscode/mcp.json</code>, <code>.cursor/mcp.json</code></td><td><code>portage init</code>: the portage and context-matic servers</td><td>Your choice: they hold no secrets</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li>Node.js 20.9 or newer, and Git.</li>
+    <li>Google Chrome or Microsoft Edge for <code>verify_checkout</code>. It drives the browser you already have, so there's no download.</li>
+    <li>A free PayPal developer account. No Stripe account is needed to try Portage.</li>
+  </ul>
+</Docs>

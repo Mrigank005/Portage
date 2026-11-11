@@ -1,0 +1,59 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import { GITHUB, tree } from "../../lib/repo";
+---
+<Docs title="Quickstart" description="Try Portage in about ten minutes: a test app, your coding agent, and a real PayPal sandbox payment at the end.">
+  <p class="eyebrow">Get started</p>
+  <h1 class="display-lg">Quickstart</h1>
+  <p class="lead">Watch your coding agent add PayPal to a test app and prove it with a real PayPal sandbox payment. It takes about ten minutes, and you don't need a Stripe account: the test apps run on <a href="/standin">Standin</a>, our local Stripe-compatible server.</p>
+
+  <h2>What you need</h2>
+  <ul>
+    <li><strong>Node.js 20.9 or newer</strong>, Git, and <strong>Google Chrome or Microsoft Edge</strong> (the proof step drives the browser you already have).</li>
+    <li>A coding agent: <strong>Claude Code</strong>, <strong>VS Code with GitHub Copilot</strong> in Agent mode, or <strong>Cursor</strong>.</li>
+    <li>A free <a href="https://developer.paypal.com/">PayPal developer account</a> for sandbox credentials.</li>
+  </ul>
+
+  <h2>1. Get Portage</h2>
+  <CodeBlock code={`git clone ${GITHUB}\ncd Portage\nnpm install\ncp .env.example .env`} />
+
+  <h2>2. Add your PayPal sandbox keys</h2>
+  <p>In the PayPal developer dashboard, switch to <strong>Sandbox</strong>, then fill in four lines of <code>.env</code>:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Setting</th><th>Where to find it</th></tr></thead>
+      <tbody>
+        <tr><td><code>PAYPAL_CLIENT_ID</code><br /><code>PAYPAL_CLIENT_SECRET</code></td><td style="white-space:normal">Apps &amp; Credentials: open the default app (or create one) and copy its Client ID and Secret.</td></tr>
+        <tr><td><code>PAYPAL_SANDBOX_BUYER_EMAIL</code><br /><code>PAYPAL_SANDBOX_BUYER_PASSWORD</code></td><td style="white-space:normal">Testing Tools → Sandbox Accounts: a <strong>Personal</strong> account's email and password (View/Edit account). A US personal account works best.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The keys stay on your machine. Portage reads only the settings it needs and never prints them.</p>
+
+  <h2>3. Make a trial copy</h2>
+  <CodeBlock code="npx portage try quill" />
+  <p><code>portage try</code> checks your setup (Node, the PayPal keys, the buyer login, a browser and the webhook relay), copies the Quill test app into <code>trial/quill-saas</code> with its settings and a git baseline, installs it, and prints a prompt. Use <code>npx portage try brewbox</code> for the Next.js shop, and add <code>--mode replace</code> to move it to PayPal completely.</p>
+
+  <h2>4. Paste the prompt into your agent</h2>
+  <p>Open the Portage folder in your agent. The repository already registers Portage's MCP server and ContextMatic for all three agents.</p>
+  <ul>
+    <li><strong>Claude Code:</strong> approve the project's <code>portage</code> and <code>context-matic</code> servers, and sign in to context-matic with <code>/mcp</code> (it's free). The playbook loads as the <code>portage-migrate</code> skill.</li>
+    <li><strong>GitHub Copilot:</strong> open Copilot Chat in <strong>Agent</strong> mode and start both servers from <code>.vscode/mcp.json</code>. Paste the prompt as your message; Copilot reads the same skill.</li>
+    <li><strong>Cursor:</strong> enable both servers in Settings → MCP, then paste the prompt.</li>
+  </ul>
+
+  <h2>5. Watch it work</h2>
+  <ol class="steps" style="margin-top:24px">
+    <li><span class="step-marker">01</span><div><b>Scan and plan</b><span>The agent maps the app's Stripe code and shows the plan. For trial apps the plan counts as approved.</span></div></li>
+    <li><span class="step-marker">02</span><div><b>Write the integration</b><span>It makes the plan's ContextMatic lookups, starts from Portage's reference code, and typechecks.</span></div></li>
+    <li><span class="step-marker">03</span><div><b>Connect webhooks</b><span>It registers a PayPal sandbox webhook through Portage's relay and restarts the app.</span></div></li>
+    <li><span class="step-marker">04</span><div><b>Prove it</b><span>It runs <code>verify_checkout</code> and fixes whatever fails until all 14 steps pass.</span></div></li>
+  </ol>
+  <p>You end with a report card, PayPal's order, capture and refund IDs, and screenshots in <code>trial/quill-saas/.portage/</code>. Run <code>git diff</code> in that folder to review every change. Our own runs are on the <a href="/runs">Runs</a> page.</p>
+
+  <div class="callout" style="margin-top:32px">
+    <p class="heading-sm" style="margin:0">Just looking?</p>
+    <p>Without an agent or any keys you can still run <code>npm test</code>, <code>npx portage scan suite/brewbox-store</code> and <code>npx portage plan suite/quill-saas</code> to see what Portage finds and plans. Results on real open-source Stripe apps are in the <a href={tree("benchmark/real-repos")}>benchmark</a>.</p>
+  </div>
+</Docs>

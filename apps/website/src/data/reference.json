@@ -1,0 +1,352 @@
+{
+  "generatedFrom": "Portage's MCP server (tools/list, prompts/list, get_reference_code) and packages/cli/src/cli.ts",
+  "server": {
+    "name": "portage",
+    "version": "0.1.0"
+  },
+  "instructions": "Portage adds PayPal to apps that take payments with Stripe, and proves the result with a real PayPal sandbox payment.\nWorkflow: scan_payment_surface, then plan_migration, then show the plan to the developer and wait for approval before editing anything. Edit only the app the plan is for; never edit Portage's own repository (its suite/ apps, packages/ or tests): \"npx portage try <app>\" makes a copy in trial/ to work on. The full playbook is the \"migrate\" prompt.\nWhile editing, start from get_reference_code where a plan step names it, and look up every PayPal Server SDK method and model with the context-matic MCP server (APIMatic Context Plugin) first.\nAfter editing, run setup_webhook_relay once (it registers a PayPal sandbox webhook for the app and writes its settings), restart the app, then verify_checkout: a real sandbox payment in a browser, the webhooks, and a refund. Fix the first failing step and run it again until it passes.\nscan_payment_surface, plan_migration and get_reference_code only read. migrate_catalog is a dry run unless dryRun is false.",
+  "tools": [
+    {
+      "name": "scan_payment_surface",
+      "title": "Scan Stripe payment code",
+      "description": "Reads a repository and reports its Stripe payment surface: the Stripe client, Checkout sessions, webhook handlers and the events they handle (with the app functions they call), refunds, the checkout button, where Stripe IDs are stored, and settings. Detects the framework and says whether Portage supports the repo, with clear reasons when it doesn't. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repoPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory."
+          }
+        },
+        "required": [
+          "repoPath"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "plan_migration",
+      "title": "Plan the PayPal migration",
+      "description": "Scans the repository and turns the result into a step-by-step plan from Portage's Stripe→PayPal map: files to create and change, new routes, webhook event mapping, order fields, money conversion, settings, items that need a person, and the ContextMatic lookups to make while editing. Mode 'add' (default) keeps Stripe and adds PayPal; 'replace' moves checkout to PayPal. Show the plan to the developer and get approval before editing. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repoPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory."
+          },
+          "mode": {
+            "default": "add",
+            "description": "add: PayPal alongside Stripe (default). replace: PayPal instead of Stripe for new payments.",
+            "type": "string",
+            "enum": [
+              "add",
+              "replace"
+            ]
+          },
+          "app": {
+            "description": "Which app to plan for, when the repository has several (its folder or package name).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repoPath"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_reference_code",
+      "title": "Get Portage reference code",
+      "description": "Returns one of Portage's tested reference files for the parts of a PayPal integration that must be exact, with where it goes, the packages and settings it needs. TypeScript files are typechecked against the real PayPal packages; the money helper and webhook verifier are tested against the PayPal sandbox. Adapt names, paths and style to the app; keep the behaviour. Available: paypal-client (One shared PayPal Server SDK client (created on first use), the Orders and Payments controllers, PayPal-Request-Id, and log-safe error descriptions with PayPal's debug_id); paypal-money (Converts the app's integer minor units to PayPal amounts and back (2400 → \"24); paypal-webhook (Verifies a PayPal webhook with POST /v1/notifications/verify-webhook-signature (the SDK has no webhook methods), passing the raw body unchanged; caches the OAuth token; finds the capture a refund belongs to); PayPalButtons (PayPal buttons for React or Next); paypal-buttons-browser (PayPal buttons for server-rendered pages (Express, plain HTML) on PayPal's JS SDK v6 with no build step: <paypal-button data-form=…> elements next to the existing checkout forms). Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "paypal-client",
+              "paypal-money",
+              "paypal-webhook",
+              "PayPalButtons",
+              "paypal-buttons-browser"
+            ],
+            "description": "Which reference file."
+          },
+          "language": {
+            "default": "typescript",
+            "description": "javascript converts server and React files for JavaScript apps.",
+            "type": "string",
+            "enum": [
+              "typescript",
+              "javascript"
+            ]
+          },
+          "module": {
+            "default": "esm",
+            "description": "For javascript: ES modules (import) or CommonJS (require).",
+            "type": "string",
+            "enum": [
+              "esm",
+              "commonjs"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "migrate_catalog",
+      "title": "Copy the Stripe catalog to PayPal",
+      "description": "Reads the app's Stripe products and one-time prices (through STRIPE_API_BASE when set, so suite apps read from Standin) and creates matching PayPal sandbox catalog products, then writes portage.catalog.json with the ID mapping and the prices as PayPal amounts. Dry run by default: nothing is created or written until dryRun is false. Test keys and the PayPal sandbox only. Reads STRIPE_SECRET_KEY, STRIPE_API_BASE, PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENVIRONMENT from the app's env files and never shows their values. Idempotent: re-runs reuse existing products.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repoPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory."
+          },
+          "app": {
+            "description": "Which app, when the repository has several (its folder or package name).",
+            "type": "string"
+          },
+          "dryRun": {
+            "default": true,
+            "description": "true (default): only report what would happen.",
+            "type": "boolean"
+          },
+          "envFiles": {
+            "description": "Env files to read, relative to the app folder. Default: .env.local, .env.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "repoPath"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "setup_webhook_relay",
+      "title": "Set up PayPal sandbox webhooks for a local app",
+      "description": "PayPal can only send webhooks to a public HTTPS URL. This registers a webhook in the developer's own PayPal sandbox app that points at Portage's webhook relay, on a new private channel, for the capture and refund events, and writes PAYPAL_WEBHOOK_ID, PORTAGE_RELAY_URL and PORTAGE_RELAY_CHANNEL to the app's env file. verify_checkout then forwards the real events to the app. Idempotent: re-runs reuse the channel and the webhook. Sandbox only; reads PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET and PAYPAL_ENVIRONMENT and never shows their values. Restart the app afterwards so it reads the new PAYPAL_WEBHOOK_ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repoPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory."
+          },
+          "app": {
+            "description": "Which app, when the repository has several (its folder or package name).",
+            "type": "string"
+          },
+          "envFiles": {
+            "description": "Env files to read credentials from, relative to the app folder. Default: .env.local, .env.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "writeTo": {
+            "description": "Env file to write the webhook settings to, relative to the app folder. Default: the first of envFiles. Use the file the app loads at runtime.",
+            "type": "string"
+          },
+          "relayUrl": {
+            "description": "A different relay (for example one deployed from Portage's render.yaml). Default: PORTAGE_RELAY_URL, else Portage's public relay.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repoPath"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "verify_checkout",
+      "title": "Prove the PayPal checkout with a real sandbox payment",
+      "description": "Runs a real PayPal sandbox payment through the running app in a headless Chrome or Edge: clicks the PayPal button (JS SDK v6 or v5), logs in as the sandbox buyer and approves, then checks with PayPal (through the PayPal Server SDK) that the app captured the order. With the webhook relay set up it forwards PayPal's real PAYMENT.CAPTURE.COMPLETED webhook to the app, sends a forged copy that the app must reject, refunds the capture through PayPal and forwards the PAYMENT.CAPTURE.REFUNDED webhook. Returns a pass/fail report card with PayPal's order, capture and refund IDs, and saves screenshots under .portage/ in the app folder. Takes one to five minutes. Start the app first. Sandbox only; credentials are read from the app's env files and never shown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repoPath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the repository or app folder. Absolute paths are safest; relative paths resolve against the server's working directory."
+          },
+          "app": {
+            "description": "Which app, when the repository has several.",
+            "type": "string"
+          },
+          "appUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Where the running app is, for example http://localhost:3000."
+          },
+          "checkoutPath": {
+            "default": "/",
+            "description": "The page with the PayPal button.",
+            "type": "string"
+          },
+          "webhookPath": {
+            "description": "The app's PayPal webhook route, for example /api/webhooks/paypal. Needed for the webhook checks.",
+            "type": "string"
+          },
+          "fill": {
+            "description": "Form fields to fill before clicking the PayPal button, as CSS selector → value, when the order needs them (for example {\"#email\": \"buyer@example.com\"}).",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "buttonIndex": {
+            "default": 0,
+            "description": "Which PayPal button on the page, when there are several (0-based).",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "paidText": {
+            "description": "Text the app shows after a successful payment, for example \"Thanks for your order\".",
+            "type": "string"
+          },
+          "refundedText": {
+            "description": "Text the app shows once the order is refunded, checked after the refund webhook.",
+            "type": "string"
+          },
+          "refund": {
+            "default": true,
+            "description": "Refund the payment through PayPal and check the refund webhook.",
+            "type": "boolean"
+          },
+          "envFiles": {
+            "description": "Env files with the PayPal and sandbox buyer settings, relative to the app folder or absolute. Default: .env.local, .env.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "headless": {
+            "default": true,
+            "description": "false shows the browser window.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "repoPath",
+          "appUrl"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "migrate",
+      "title": "Add PayPal with Portage",
+      "description": "Portage's playbook: scan, plan, approval, edits with ContextMatic and reference code, checks, and the sandbox payment test.",
+      "arguments": [
+        {
+          "name": "repoPath",
+          "description": "The repository or app to migrate.",
+          "required": true
+        },
+        {
+          "name": "mode",
+          "description": "add (default) keeps Stripe; replace moves new payments to PayPal.",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "name": "paypal-client",
+      "filename": "paypal-client.ts",
+      "purpose": "One shared PayPal Server SDK client (created on first use), the Orders and Payments controllers, PayPal-Request-Id, and log-safe error descriptions with PayPal's debug_id.",
+      "placement": "Next to the app's Stripe client module (for example lib/paypal.ts beside lib/stripe.ts).",
+      "packages": "@paypal/paypal-server-sdk",
+      "settings": "PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENVIRONMENT"
+    },
+    {
+      "name": "paypal-money",
+      "filename": "paypal-money.ts",
+      "purpose": "Converts the app's integer minor units to PayPal amounts and back (2400 → \"24.00\"; JPY stays whole; refuses HUF/TWD fractions instead of rounding).",
+      "placement": "Next to the PayPal client. Self-contained: copy it as it is.",
+      "packages": "none",
+      "settings": "none"
+    },
+    {
+      "name": "paypal-webhook",
+      "filename": "paypal-webhook.ts",
+      "purpose": "Verifies a PayPal webhook with POST /v1/notifications/verify-webhook-signature (the SDK has no webhook methods), passing the raw body unchanged; caches the OAuth token; finds the capture a refund belongs to.",
+      "placement": "Next to the PayPal client. The webhook route reads the body as text and calls verifyPayPalWebhook(headers, rawBody) before anything else.",
+      "packages": "none",
+      "settings": "PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENVIRONMENT, PAYPAL_WEBHOOK_ID"
+    },
+    {
+      "name": "PayPalButtons",
+      "filename": "PayPalButtons.tsx",
+      "purpose": "PayPal buttons for React or Next.js on PayPal's JS SDK v6 (@paypal/react-paypal-js/sdk-v6): a provider for the page and a button that sends the existing checkout form's fields to the create-order route and captures on approval.",
+      "placement": "A client component next to the page with the checkout button. Wrap the page section once in <PayPalCheckoutProvider>, and put <PayPalCheckoutButton formId=…> beside the existing checkout button.",
+      "packages": "@paypal/react-paypal-js",
+      "settings": "NEXT_PUBLIC_PAYPAL_CLIENT_ID (or however the app exposes public settings)"
+    },
+    {
+      "name": "paypal-buttons-browser",
+      "filename": "paypal-buttons.js",
+      "purpose": "PayPal buttons for server-rendered pages (Express, plain HTML) on PayPal's JS SDK v6 with no build step: <paypal-button data-form=…> elements next to the existing checkout forms.",
+      "placement": "Serve it as a static file (or inline it). The page needs the <meta name=\"paypal-checkout\" …> tag, the buttons, and the v6 core script; see the comment at the top.",
+      "packages": "none",
+      "settings": "PAYPAL_CLIENT_ID (rendered into the page; it is public)"
+    }
+  ],
+  "cliHelp": "Portage: adds PayPal to apps that use Stripe.\n\nUsage:\n  portage try <brewbox|quill> [--mode add|replace] [--dir <folder>] [--force]\n                                                            Check your setup, copy a test app into trial/ with its settings,\n                                                            and print the prompt to paste into your coding agent\n  portage init --agent claude|copilot|cursor [--project <repo>]\n                                                            Set Portage up for an agent, to use on another repository\n  portage scan <path> [--json]                              Report the Stripe payment code and whether Portage supports it\n  portage plan <path> [--mode add|replace] [--app <name>] [--json]\n                                                            Plan the PayPal migration (default mode: add)\n  portage relay setup <appDir> [--write-to <file>] [--relay-url <url>]\n                                                            Register a PayPal sandbox webhook that points at Portage's relay\n                                                            and write PAYPAL_WEBHOOK_ID and the relay settings to the app's env file\n  portage relay forward <appDir> --to <url>                 Forward PayPal sandbox webhooks from the relay to the running app\n  portage verify <appDir> --url <appUrl> [--checkout <path>] [--webhook <path>]\n                 [--paid-text <text>] [--refunded-text <text>] [--button <n>] [--fill <selector>=<value>]... [--no-refund] [--headed] [--json]\n                                                            A real PayPal sandbox payment through the running app, in a browser\n\nOptions for relay and verify: --env <file> (repeatable; default .env.local and .env in the app folder).\nscan and plan only read the repository. relay and verify use the PayPal sandbox only."
+}

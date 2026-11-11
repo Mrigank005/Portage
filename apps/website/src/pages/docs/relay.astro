@@ -1,0 +1,52 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import { RELAY_URL, blob, tree } from "../../lib/repo";
+---
+<Docs title="Webhook relay" description="How Portage gets PayPal's real sandbox webhooks to an app running on localhost, without tunnels or accounts.">
+  <p class="eyebrow">Concepts</p>
+  <h1 class="display-lg">Webhook relay</h1>
+  <p class="lead">PayPal delivers webhooks only to a public HTTPS URL, and the app under test runs on your laptop. Portage's relay sits in between, so your app receives PayPal's real events, signed by PayPal, without a tunnel, a second account or a deploy.</p>
+
+  <div class="diagram" role="img" aria-label="PayPal sandbox posts webhooks to Portage's relay. Portage on your machine long-polls the relay and posts each event, unchanged, to your app's webhook route.">
+    <div class="node"><b>PayPal sandbox</b><span>Your own sandbox app</span></div>
+    <div class="edge"><span>POST<br />/hooks/…</span></div>
+    <div class="node dark"><b>Portage relay</b><span>On Render, in memory</span></div>
+    <div class="edge back"><span>long-poll</span></div>
+    <div class="node"><b>Portage</b><span>On your machine</span></div>
+    <div class="edge"><span>same bytes, same headers</span></div>
+    <div class="node"><b>Your app</b><span>Its webhook route</span></div>
+  </div>
+
+  <h2>How it works</h2>
+  <ol>
+    <li><code>setup_webhook_relay</code> (or <code>npx portage relay setup &lt;app&gt;</code>) picks a long random channel and registers <code>{RELAY_URL}/hooks/&lt;channel&gt;</code> as a webhook in your <strong>own</strong> PayPal sandbox app, for the five capture events in Portage's map. It writes <code>PAYPAL_WEBHOOK_ID</code>, <code>PORTAGE_RELAY_URL</code> and <code>PORTAGE_RELAY_CHANNEL</code> to the app's env file. Re-runs reuse the channel and the webhook.</li>
+    <li>PayPal posts events to the relay, which keeps each body byte for byte, with PayPal's signature headers.</li>
+    <li>Portage long-polls the channel and posts each event to your app's webhook route exactly as PayPal sent it. Your app verifies the signature with PayPal, as it would in production. <code>verify_checkout</code> does this while it runs; <code>npx portage relay forward &lt;app&gt; --to &lt;url&gt;</code> does it while you develop.</li>
+  </ol>
+
+  <h2>Built to be boring</h2>
+  <ul>
+    <li><strong>No credentials.</strong> The relay never verifies, changes or acts on events. Your app does the verification, with your keys, on your machine.</li>
+    <li><strong>Private channels.</strong> Channel names are 24 random characters, so one tester can't read another's events.</li>
+    <li><strong>Short memory.</strong> Events are sandbox data, kept in memory for at most a day, 100 per channel. Nothing is written to disk.</li>
+    <li><strong>No dependencies.</strong> One Node.js file, <code>node server.mjs</code>, with its own tests.</li>
+  </ul>
+
+  <h2>The endpoints</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Route</th><th>What it's for</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /hooks/&lt;channel&gt;</code></td><td>Where PayPal delivers events. The body and <code>paypal-*</code> headers are stored unchanged.</td></tr>
+        <tr><td><code>GET /channels/&lt;channel&gt;/events?after=N&amp;wait=S</code></td><td>Long-polls for events newer than <code>N</code>, waiting up to <code>S</code> seconds (25 at most).</td></tr>
+        <tr><td><code>GET /health</code></td><td>Liveness, for Render's health check and uptime monitoring.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Run your own</h2>
+  <p>Portage uses the public relay at <a href={`${RELAY_URL}/health`}>{RELAY_URL.replace("https://", "")}</a> by default. To run your own, deploy <a href={tree("apps/webhook-relay")}><code>apps/webhook-relay</code></a> from the repository's <a href={blob("render.yaml")}><code>render.yaml</code></a> (or anywhere that runs Node.js 22), then point Portage at it:</p>
+  <CodeBlock code={`npx portage relay setup path/to/app --relay-url https://your-relay.example.com`} />
+  <p>The MCP tool takes the same option as <code>relayUrl</code>, and both read <code>PORTAGE_RELAY_URL</code> when it's set.</p>
+</Docs>

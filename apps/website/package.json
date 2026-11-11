@@ -1,0 +1,20 @@
+{
+  "name": "@portage/website",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Portage's website: product pages, docs and the published runs, built from the repository's own files.",
+  "scripts": {
+    "dev": "node scripts/copy-evidence.mjs && node scripts/reference-data.mjs && astro dev",
+    "build": "node scripts/copy-evidence.mjs && node scripts/reference-data.mjs && astro build",
+    "preview": "astro preview"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "astro": "7.3.8",
+    "cookie": "2.0.2"
+  }
+}

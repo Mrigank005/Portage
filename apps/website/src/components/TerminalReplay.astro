@@ -1,0 +1,66 @@
+---
+// A real run, replayed: the lines come from benchmark/runs/<run>/verify/result.json. With reduced motion (or no JS)
+// the whole transcript is shown at once.
+import type { Run } from "../lib/repo";
+import { seconds } from "../lib/repo";
+interface Props {
+  run: Run;
+}
+const { run } = Astro.props;
+const r = run.result;
+const short = (s: string) => {
+  const order = r.paypalOrderId && s.includes(r.paypalOrderId) ? `order ${r.paypalOrderId}` : "";
+  if (s.startsWith("JS SDK v6")) return "JS SDK v6 <paypal-button>";
+  if (order) return `${order} · ${r.amount ?? ""}`.trim();
+  const cap = s.match(/capture (\w+) (\w+) for ([\d.]+ \w+)/);
+  if (cap) return `capture ${cap[1]} ${cap[2]}`;
+  const ref = s.match(/Refund (\w+) (\w+)/);
+  if (ref) return `refund ${ref[1]} ${ref[2]}`;
+  if (/verified it with PayPal and answered (\d+)/.test(s)) return `real PayPal event · verified · ${s.match(/answered (\d+)/)![1]}`;
+  const forged = s.match(/got HTTP (\d+)/);
+  if (forged) return `rejected · HTTP ${forged[1]}`;
+  if (s.startsWith("Logged in")) return "US sandbox buyer";
+  const shows = s.match(/^"([^"]+)"/);
+  if (shows) return `page shows "${shows[1]}"`;
+  if (s.startsWith("https://portage-relay")) return "portage-relay.onrender.com";
+  return "";
+};
+type Line = { cls: string; text: string };
+const lines: Line[] = [
+  { cls: "t-c", text: "$ npx portage try quill" },
+  { cls: "t-s", text: "  ok  node · paypal sandbox keys · buyer login · browser · relay" },
+  { cls: "t-s", text: "  ready  trial/quill-saas · prompt printed: paste it into your agent" },
+  { cls: "t-c", text: "" },
+  { cls: "t-c", text: "# agent: scan → plan → 15 ContextMatic lookups → edits → typecheck" },
+  { cls: "t-c", text: "# verify_checkout: a real PayPal sandbox payment" },
+  ...r.steps
+    .filter((s) => s.name !== "Checkout form filled")
+    .map((s) => {
+      const mark = s.status === "pass" ? "✓" : s.status === "fail" ? "✗" : s.status === "warn" ? "!" : "–";
+      const cls = s.status === "pass" ? "t-ok" : s.status === "fail" ? "t-no" : "t-w";
+      const tail = short(s.detail);
+      return { cls, text: `${mark} ${s.name.padEnd(36)}${tail}` };
+    }),
+  { cls: "t-c", text: "" },
+  { cls: "t-ok", text: `Sandbox checkout test: passed · ${r.steps.filter((s) => s.status === "pass").length}/${r.steps.length} steps · ${seconds(r.durationMs)}s` },
+];
+---
+<div class="terminal" data-replay>
+  <div class="terminal-bar"><span></span><span></span><span></span><b>portage · {run.app.toLowerCase()} · {run.agent}</b><a href={`/runs/${run.slug}`}>View this run</a></div>
+  <pre aria-label={`Transcript of a real Portage run on ${run.app}`}>{lines.map((l) => <span class={`t-line ${l.cls}`}>{l.text || " "}</span>)}</pre>
+</div>
+<script is:inline>
+  (() => {
+    const t = document.currentScript.previousElementSibling;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!t || reduce || !("IntersectionObserver" in window)) return;
+    const lines = [...t.querySelectorAll(".t-line")];
+    lines.forEach((l) => l.classList.add("pending"));
+    const io = new IntersectionObserver((es) => {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      lines.forEach((l, i) => setTimeout(() => l.classList.remove("pending"), 160 + i * (i < 6 ? 260 : 190)));
+    }, { threshold: 0.25 });
+    io.observe(t);
+  })();
+</script>

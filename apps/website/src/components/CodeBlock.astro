@@ -1,0 +1,16 @@
+---
+// A copyable command or prompt on an onyx panel. The copy button is enhanced by the script in Base.astro.
+import Icon from "./Icon.astro";
+interface Props {
+  code: string;
+  label?: string;
+}
+const { code, label = "Terminal" } = Astro.props;
+---
+<div class="code-block">
+  <div class="cb-head">
+    <span>{label}</span>
+    <button class="copy-btn" type="button" data-copy={code}><Icon name="copy" /><span>Copy</span></button>
+  </div>
+  <pre><code>{code}</code></pre>
+</div>

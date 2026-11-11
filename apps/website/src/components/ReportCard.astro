@@ -1,0 +1,27 @@
+---
+// verify_checkout's report card for one run, exactly as the tool wrote it.
+import StatusBadge from "./StatusBadge.astro";
+import type { Run } from "../lib/repo";
+interface Props {
+  run: Run;
+  compact?: boolean;
+}
+const { run, compact = false } = Astro.props;
+const steps = run.result.steps;
+---
+<div class="table-wrap">
+  <table class="report">
+    <thead>
+      <tr><th>Result</th><th>Step</th>{!compact && <th class="detail">What verify_checkout saw</th>}</tr>
+    </thead>
+    <tbody>
+      {steps.map((s) => (
+        <tr>
+          <td class="nowrap"><StatusBadge status={s.status} /></td>
+          <td class="step">{s.name}</td>
+          {!compact && <td class="detail">{s.detail}</td>}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

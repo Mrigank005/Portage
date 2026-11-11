@@ -1,0 +1,88 @@
+---
+import Docs from "../../layouts/Docs.astro";
+import CodeBlock from "../../components/CodeBlock.astro";
+import { blob } from "../../lib/repo";
+import { cliCommands, usageTokens } from "../../lib/data";
+const parsed = cliCommands();
+const usage = usageTokens;
+const commands = [
+  {
+    id: "try",
+    what: "Checks your setup (Node, the PayPal keys, the sandbox buyer, a browser and the webhook relay), copies a test app into trial/ with its settings and a git baseline, installs its packages, and prints the prompt to paste into your agent.",
+    example: "npx portage try brewbox --mode replace",
+  },
+  {
+    id: "init",
+    what: "Builds Portage's MCP server and sets it up for an agent: the Claude Code plugin, or the portage and context-matic servers in your repository's .vscode/mcp.json or .cursor/mcp.json, keeping servers already there.",
+    example: "npx portage init --agent copilot --project ../my-shop",
+  },
+  {
+    id: "scan",
+    what: "Reports the repository's Stripe payment code and whether Portage supports it. Read-only.",
+    example: "npx portage scan suite/brewbox-store",
+  },
+  {
+    id: "plan",
+    what: "The migration plan: steps, files, routes, webhook events, money, settings, items for a person and ContextMatic lookups. Read-only.",
+    example: "npx portage plan suite/quill-saas --mode replace",
+  },
+  {
+    id: "relay",
+    what: "setup registers a PayPal sandbox webhook pointing at Portage's relay and writes PAYPAL_WEBHOOK_ID and the relay settings to the app's env file. forward relays PayPal's sandbox webhooks to your running app until you press Ctrl+C.",
+    example: "npx portage relay forward ./my-shop --to http://localhost:3000/api/webhooks/paypal",
+  },
+  {
+    id: "verify",
+    what: "A real PayPal sandbox payment through the running app, in a browser: the same check as the verify_checkout tool, with the same report card and evidence in .portage/.",
+    example: 'npx portage verify ./my-shop --url http://localhost:3000 --webhook /api/webhooks/paypal --paid-text "Thanks"',
+  },
+];
+---
+<Docs title="CLI" description="Reference for the portage command: try, init, scan, plan, relay and verify.">
+  <p class="eyebrow">Reference</p>
+  <h1 class="display-lg">CLI</h1>
+  <p class="lead">Everything the MCP tools do, you can run from a terminal. From the Portage folder, run <code>npx portage</code>. The usage below is taken from the CLI's own help text when the site is built, so it always matches the code.</p>
+  <nav aria-label="Commands" class="card" style="margin-top:28px">
+    <p class="eyebrow" style="margin:0 0 10px">Commands</p>
+    <ul style="margin:0;padding-left:20px">
+      {commands.map((c) => <li><a href={`#${c.id}`}><code>portage {c.id}</code></a> <span class="muted">· {(parsed.find((p) => p.name === `portage ${c.id}`) ?? parsed.find((p) => p.name.startsWith(`portage ${c.id}`)))?.description}</span></li>)}
+    </ul>
+  </nav>
+
+  {commands.map((c) => {
+    const usages = parsed.filter((p) => p.name === `portage ${c.id}` || p.name.startsWith(`portage ${c.id} `));
+    return (
+      <section>
+        <h2 id={c.id}><code style="font-size:.78em">portage {c.id}</code></h2>
+        <p>{c.what}</p>
+        <p class="heading-sm" style="margin:20px 0 8px;color:var(--ink)">Usage</p>
+        <div class="usage">
+          {usages.map((u) => (
+            <p class="usage-line">
+              {usage(u.usage.join(" ")).map((t) => <span class={t.startsWith("[") || t.startsWith("--") ? "u-opt" : t.startsWith("<") ? "u-arg" : "u-cmd"}>{t}</span>)}
+            </p>
+          ))}
+        </div>
+        <CodeBlock code={c.example} label="Example" />
+      </section>
+    );
+  })}
+
+  <h2>Env files</h2>
+  <p><code>relay</code> and <code>verify</code> read the app's <code>.env.local</code> and <code>.env</code> by default. Pass <code>--env &lt;file&gt;</code> (repeatable) to use others. The flag is <code>--env</code>, not <code>--env-file</code>, because Node.js itself takes <code>--env-file</code>. Values are never printed.</p>
+
+  <h2>Exit codes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td>Success: the repository is supported, the plan is ready, or every verify step passed.</td></tr>
+        <tr><td class="num">1</td><td>Something failed: a verify step, or an error such as missing settings.</td></tr>
+        <tr><td class="num">2</td><td>Bad arguments.</td></tr>
+        <tr><td class="num">3</td><td><code>scan</code> or <code>plan</code>: the repository isn't supported, or the plan has blockers. The output says why.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>In Git Bash on Windows, set <code>MSYS_NO_PATHCONV=1</code> before <code>verify</code>, or Git Bash rewrites <code>/api/...</code> into a Windows path. <code>verify</code> says so if it happens.</p>
+  <p class="caption muted" style="margin-top:16px">Source: <a href={blob("packages/cli/src/cli.ts")}>packages/cli/src/cli.ts</a>.</p>
+</Docs>

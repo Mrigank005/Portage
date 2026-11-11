@@ -12,3 +12,29 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+
+  # The website: static pages built from the repository's own files (runs, results, references).
+  - type: web
+    name: portage-dev
+    runtime: static
+    buildCommand: npm ci --no-audit --no-fund && npm run build -w apps/website
+    staticPublishPath: apps/website/dist
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - apps/website/**
+        - benchmark/runs/**
+        - package-lock.json
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /_astro/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
