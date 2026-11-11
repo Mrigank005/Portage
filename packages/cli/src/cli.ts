@@ -1,3 +1,5 @@
+// portage try <brewbox|quill> [--dir d] [--force] [--no-install]
+// portage init --agent claude|copilot|cursor [--project <repo>]
 // portage scan <path> [--json]
 // portage plan <path> [--mode add|replace] [--app <name>] [--json]
 // portage relay setup <appDir> [--env f]... [--write-to f] [--relay-url u]
@@ -18,10 +20,15 @@ import {
   wakeRelay,
   type Mode,
 } from "@portage/core";
+import { checks, initAgent, renderChecks, setupTrial, TRIAL_APPS, type Agent, type TrialApp } from "./setup.ts";
 
 const HELP = `Portage: adds PayPal to apps that use Stripe.
 
 Usage:
+  portage try <brewbox|quill> [--dir <folder>] [--force]    Check your setup, copy a test app into trial/ with its settings,
+                                                            and print the prompt to paste into your coding agent
+  portage init --agent claude|copilot|cursor [--project <repo>]
+                                                            Set Portage up for an agent, to use on another repository
   portage scan <path> [--json]                              Report the Stripe payment code and whether Portage supports it
   portage plan <path> [--mode add|replace] [--app <name>] [--json]
                                                             Plan the PayPal migration (default mode: add)
@@ -36,7 +43,7 @@ Usage:
 Options for relay and verify: --env <file> (repeatable; default .env.local and .env in the app folder).
 scan and plan only read the repository. relay and verify use the PayPal sandbox only.`;
 
-const VALUE_FLAGS = new Set(["mode", "app", "env", "write-to", "relay-url", "to", "url", "checkout", "webhook", "paid-text", "refunded-text", "button", "out", "fill"]);
+const VALUE_FLAGS = new Set(["mode", "app", "env", "write-to", "relay-url", "to", "url", "checkout", "webhook", "paid-text", "refunded-text", "button", "out", "fill", "dir", "agent", "project"]);
 
 function parse(rest: string[]) {
   const flags = new Map<string, string | true>();
@@ -66,6 +73,8 @@ async function main(argv: string[]): Promise<number> {
     console.log(HELP);
     return 0;
   }
+  if (cmd === "try") return tryCommand(positional, flags);
+  if (cmd === "init") return initCommand(flags);
   if (!["scan", "plan", "relay", "verify"].includes(cmd) || (cmd === "relay" && sub !== "setup" && sub !== "forward")) {
     console.error(`Unknown command "${[cmd, sub].filter(Boolean).join(" ")}".\n\n${HELP}`);
     return 2;
@@ -141,6 +150,52 @@ async function main(argv: string[]): Promise<number> {
     return plan.status === "ready" ? 0 : 3;
   } catch (err) {
     console.error(`portage: ${err instanceof Error ? err.message : String(err)}`);
+    return 1;
+  }
+}
+
+async function tryCommand(positional: string[], flags: Map<string, string | true>): Promise<number> {
+  const app = positional[0] as TrialApp;
+  if (positional.length !== 1 || !Object.hasOwn(TRIAL_APPS, app)) {
+    console.error(`portage try needs one test app: ${Object.keys(TRIAL_APPS).join(" or ")}.`);
+    return 2;
+  }
+  console.log("Checking your setup…");
+  const list = await checks();
+  console.log(renderChecks(list));
+  if (list.some((c) => c.ok === false)) {
+    console.error("\nFix the FAIL lines above, then run this again.");
+    return 1;
+  }
+  try {
+    const r = await setupTrial(app, { dir: str(flags, "dir"), force: flags.has("force"), install: !flags.has("no-install"), log: (m) => console.log(`  ${m}`) });
+    console.log(`\nReady: ${path.relative(process.cwd(), r.dir) || r.dir}\n`);
+    console.log(`Open this repository in Claude Code, VS Code with GitHub Copilot (Agent mode) or Cursor. Its MCP config gives the agent Portage and ContextMatic (allow both servers, and sign in to ContextMatic when asked). Then paste this prompt (also saved in ${path.relative(process.cwd(), r.promptFile)}):\n`);
+    console.log("-----8<-----");
+    console.log(r.prompt);
+    console.log("-----8<-----");
+    return 0;
+  } catch (err) {
+    console.error(`portage: ${(err as Error).message}`);
+    return 1;
+  }
+}
+
+async function initCommand(flags: Map<string, string | true>): Promise<number> {
+  const agent = str(flags, "agent") as Agent | undefined;
+  if (!agent || !["claude", "copilot", "cursor"].includes(agent)) {
+    console.error("portage init needs --agent claude, --agent copilot or --agent cursor.");
+    return 2;
+  }
+  try {
+    const r = initAgent(agent, { project: str(flags, "project"), log: (m) => console.log(`  ${m}`) });
+    for (const d of r.done) console.log(`done  ${d}`);
+    console.log("\nNext:");
+    for (const n of r.next) console.log(n.startsWith("  ") ? n : `- ${n}`);
+    console.log("\nThen ask your agent to add PayPal to the repository with Portage. Sandbox keys go in that repository's own env file (see this repository's .env.example).");
+    return 0;
+  } catch (err) {
+    console.error(`portage: ${(err as Error).message}`);
     return 1;
   }
 }

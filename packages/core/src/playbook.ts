@@ -13,7 +13,7 @@ You are adding PayPal to an app that already takes payments with Stripe. Portage
 
 ## Rules
 
-- **Nothing is edited before the developer approves the plan.** For apps in Portage's own \`suite/\` folder the plan counts as approved; say so when you continue.
+- **Nothing is edited before the developer approves the plan.** For Portage's own test apps (in its \`suite/\` folder, or copied to \`trial/\` by \`portage try\`) the plan counts as approved; say so when you continue.
 - **PayPal SDK code comes from ContextMatic, never from memory.** Before writing any call to the PayPal Server SDK (\`@paypal/paypal-server-sdk\`), use the \`context-matic\` MCP server: \`fetch_api\` (language \`typescript\`, key \`paypal\`), then \`endpoint_search\` for every method and \`model_search\` for every model you use. Each plan step lists its lookups. If ContextMatic is unavailable, stop and say so.
 - **Start from Portage's reference code** where a plan step names it (\`get_reference_code\`). It is typechecked against the real PayPal packages and tested against the PayPal sandbox. Adapt names, paths and style to the app; keep the behaviour.
 - **Keep a log of your ContextMatic lookups** (tool, query, what it confirmed). It goes in the report and the pull request under "ContextMatic lookups".

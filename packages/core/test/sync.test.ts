@@ -12,9 +12,11 @@ import { REFERENCE_SOURCES } from "../src/reference-sources.ts";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../..");
 
-test("SKILL.md is the playbook (run npm run skill:sync after editing playbook.ts)", () => {
-  const skill = fs.readFileSync(path.join(root, "plugin/skills/portage-migrate/SKILL.md"), "utf8").replace(/\r\n/g, "\n");
-  assert.equal(skill, skillMarkdown());
+test("both copies of SKILL.md are the playbook (run npm run skill:sync after editing playbook.ts)", () => {
+  for (const rel of ["plugin/skills/portage-migrate/SKILL.md", ".claude/skills/portage-migrate/SKILL.md"]) {
+    const skill = fs.readFileSync(path.join(root, rel), "utf8").replace(/\r\n/g, "\n");
+    assert.equal(skill, skillMarkdown(), rel);
+  }
 });
 
 test("embedded reference sources match the reference files (run npm run reference:embed after editing them)", () => {

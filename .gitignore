@@ -43,3 +43,6 @@ plugin/server/
 
 # verify_checkout evidence (screenshots, result.json)
 .portage/
+
+# Trial copies of the suite apps made by `portage try` (with real sandbox settings in their env files)
+trial/

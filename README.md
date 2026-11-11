@@ -4,7 +4,7 @@
 
 Portage is a plugin for AI coding agents. It reads a codebase that takes payments through Stripe, wires PayPal into the same checkout, orders and webhooks, then proves the result works with a real PayPal sandbox payment before handing over a pull request.
 
-> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, the playbook that drives the edit step, the **webhook relay** and **`verify_checkout`**, the automated sandbox payment test. Portage's workflow has added PayPal to Brewbox (Next.js) and Quill (Express), and `verify_checkout` passed on both with real sandbox payments, real PayPal webhooks and refunds ([Brewbox](benchmark/runs/brewbox-add/README.md), [Quill](benchmark/runs/quill-add/README.md)). Steps marked *planned* are not built yet.
+> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, the playbook that drives the edit step, the **webhook relay** and **`verify_checkout`**, the automated sandbox payment test. Portage's workflow has added PayPal to Brewbox (Next.js) and Quill (Express), and `verify_checkout` passed on both with real sandbox payments, real PayPal webhooks and refunds ([Brewbox](benchmark/runs/brewbox-add/README.md), [Quill](benchmark/runs/quill-add/README.md)). A headless Claude Code agent, given only the README prompt on a fresh clone, did the same for Quill unaided ([the run](benchmark/runs/quill-agent-run/README.md)). Steps marked *planned* are not built yet.
 
 ---
 
@@ -72,7 +72,7 @@ packages/core        scanner, Stripe→PayPal map (maps/stripe-paypal.json),
 packages/mcp-server  Portage MCP server: scan_payment_surface, plan_migration, get_reference_code,
                      migrate_catalog, setup_webhook_relay, verify_checkout, and the
                      `migrate` prompt (built)
-packages/cli         `portage scan`, `plan`, `relay` and `verify`              (built; `init` planned)
+packages/cli         `portage try`, `init`, `scan`, `plan`, `relay` and `verify` (built)
 packages/standin     Standin, the local Stripe-compatible test server         (built)
 plugin/              plugin manifest, MCP config and the portage-migrate skill
 suite/               small test apps used to evaluate Portage                 (built)
@@ -86,28 +86,62 @@ apps/website         project website with setup prompts and benchmark results (p
 apps/webhook-relay   forwards PayPal sandbox webhooks to apps running locally (built; on Render)
 ```
 
-## Getting started
+## Try it
 
-You need Node.js 20+. You won't need a Stripe account.
+You need:
+
+- Node.js 20.9 or newer, Git, and Google Chrome or Microsoft Edge (`verify_checkout` drives the browser you already have).
+- A coding agent: Claude Code, VS Code with GitHub Copilot (Agent mode), or Cursor.
+- A free [PayPal developer account](https://developer.paypal.com/) for sandbox credentials. You won't need a Stripe account: the test apps run on Standin.
 
 ```bash
+git clone https://github.com/Mrigank005/Portage
+cd Portage
 npm install
+cp .env.example .env      # then fill in the PayPal sandbox section (below)
+npx portage try quill     # or: npx portage try brewbox
+```
+
+**What goes in `.env`.** In the PayPal developer dashboard, with **Sandbox** selected:
+
+- *Apps & Credentials*: open the default app (or create one) and copy its **Client ID** and **Secret** into `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`.
+- *Testing Tools → Sandbox Accounts*: pick a **Personal** account, open *View/Edit account*, and copy its email and password into `PAYPAL_SANDBOX_BUYER_EMAIL` and `PAYPAL_SANDBOX_BUYER_PASSWORD`. A **US** personal account works best: in our runs, a non-US default buyer got "This seller doesn't accept payments in your currency". You can create one under *Create account* (country: United States).
+
+Leave everything else as it is. The keys stay on your machine; Portage never prints them.
+
+**`npx portage try quill`** checks your setup (Node, the PayPal keys, the buyer login, a browser, the webhook relay). It then copies the Quill test app into `trial/quill-saas` with its settings and a git baseline, installs its packages, and prints a prompt.
+
+**Then open the Portage folder in your agent** and paste the prompt:
+
+- **Claude Code:** approve the project's MCP servers (`portage` and `context-matic`) when asked, and sign in to context-matic (APIMatic's Context Plugin, free) with `/mcp`. The playbook is the `portage-migrate` skill.
+- **GitHub Copilot:** open Copilot Chat in **Agent** mode and start the two servers from `.vscode/mcp.json` when VS Code offers. The playbook is the `/mcp.portage.migrate` prompt.
+- **Cursor:** enable the two servers in *Settings → MCP*. The playbook is the `migrate` prompt.
+
+The agent scans the app, shows its plan, writes the PayPal integration with ContextMatic lookups and Portage's reference code, registers a PayPal sandbox webhook through Portage's relay, then runs `verify_checkout`: a real sandbox payment in a headless browser, PayPal's real webhooks, a forged one that must be rejected, and a refund. It fixes what fails and reports a report card. `cd trial/quill-saas && git diff` shows every change.
+
+### On your own repository
+
+```bash
+npx portage init --agent claude                                   # installs the Claude Code plugin
+npx portage init --agent copilot --project path/to/your/repo      # writes .vscode/mcp.json there
+npx portage init --agent cursor  --project path/to/your/repo      # writes .cursor/mcp.json there
+```
+
+Then ask your agent to add PayPal with Portage. Put your PayPal sandbox settings in that repository's own env file. Catalog copy (replace mode) also uses its Stripe **test** keys.
+
+### Run the tests
+
+```bash
 npm test                # all tests; the first run downloads Stripe's OpenAPI spec into .cache/.
                         # With PayPal sandbox keys in .env, a few tests also run against the real sandbox.
-npm run suite:e2e       # Standin + Brewbox + Quill, with real payments driven through each
+npm run suite:e2e       # Standin + Brewbox + Quill, with real payments driven through each (needs ports 4242, 4300, 4301)
 
 npx portage scan suite/brewbox-store          # what Portage finds in a Stripe app
 npx portage plan suite/quill-saas             # the plan for adding PayPal (--mode replace for the other mode)
 npx portage plan suite/ledgerline-flask       # a refusal, with the reason
 ```
 
-To try PayPal payments yourself you need a PayPal developer account with sandbox credentials, and Chrome or Edge for `verify_checkout`. Use a **US sandbox buyer** to pay: in our runs, the default sandbox buyer got "This seller doesn't accept payments in your currency", and a US buyer worked.
-
-The suite check starts everything itself and needs ports 4242, 4300 and 4301 free. See [`suite/README.md`](suite/README.md) to run the apps by hand.
-
-Working in this repository with Claude Code, Cursor or GitHub Copilot also gives your agent Portage's MCP tools (`scan_payment_surface`, `plan_migration`, `get_reference_code`, `migrate_catalog`, `setup_webhook_relay`, `verify_checkout`) and the `migrate` prompt, next to ContextMatic.
-
-Setup prompts for the Portage plugin will be added here as it comes together. It will also need a PayPal developer account with sandbox credentials and a supported coding agent; see [`.env.example`](.env.example) for the configuration it reads.
+See [`suite/README.md`](suite/README.md) to run the apps by hand. Working in this repository with any of the three agents gives it Portage's MCP tools (`scan_payment_surface`, `plan_migration`, `get_reference_code`, `migrate_catalog`, `setup_webhook_relay`, `verify_checkout`) and the `migrate` prompt, next to ContextMatic.
 
 ## License
 

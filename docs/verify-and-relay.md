@@ -52,8 +52,9 @@ npx portage verify path/to/app --url http://localhost:3000 --webhook /api/webhoo
 
 - [Brewbox](../benchmark/runs/brewbox-add/README.md) (Next.js, React buttons): 13 of 13 steps.
 - [Quill](../benchmark/runs/quill-add/README.md) (Express, server-rendered buttons, a form to fill): 14 of 14 steps.
+- [A headless Claude Code agent on a fresh clone](../benchmark/runs/quill-agent-run/README.md): one pasted prompt, no help, 14 of 14 steps on the first `verify_checkout`. Its first attempt stopped before editing anything because ContextMatic wasn't signed in, which is the playbook's rule working.
 
-Both used real PayPal sandbox payments, real PayPal webhooks through the relay, and Standin in place of Stripe.
+All used real PayPal sandbox payments, real PayPal webhooks through the relay, and Standin in place of Stripe.
 
 ## Confirming with PayPal's own tools
 
