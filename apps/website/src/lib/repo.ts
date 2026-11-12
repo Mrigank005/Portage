@@ -11,7 +11,7 @@ export const tree = (p: string) => `${GITHUB}/tree/main/${p}`;
 export const RELAY_URL = "https://portage-relay.onrender.com";
 
 /** Set once the demo video is on YouTube; the video section stays hidden until then. */
-export const YOUTUBE_ID = "";
+export const YOUTUBE_ID = "_-oA4U_pZKk";
 
 export type StepStatus = "pass" | "fail" | "warn" | "skip";
 export interface Step {

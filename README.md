@@ -4,7 +4,7 @@
 
 Portage is a plugin for AI coding agents. It reads a codebase that takes payments through Stripe, wires PayPal into the same checkout, orders and webhooks, then proves the result works with a real PayPal sandbox payment before handing over a pull request.
 
-> **Status:** in active development for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026). Built so far: **Standin** (the local Stripe-compatible server), the **test suite** (Brewbox, Quill, Ledgerline), Portage's **scan** and **plan** tools, tested **reference code** for the PayPal parts that must be exact, **catalog copy**, the playbook that drives the edit step, the **webhook relay** and **`verify_checkout`**, the automated sandbox payment test. Portage's workflow has added PayPal to Brewbox (Next.js) and Quill (Express), and `verify_checkout` passed on both with real sandbox payments, real PayPal webhooks and refunds ([Brewbox](benchmark/runs/brewbox-add/README.md), [Quill](benchmark/runs/quill-add/README.md)). A headless Claude Code agent, given only the README prompt on a fresh clone, did the same for Quill unaided ([the run](benchmark/runs/quill-agent-run/README.md)). Steps marked *planned* are not built yet.
+> **Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (October–November 2026).** [Watch the demo (under 3 minutes)](https://youtu.be/_-oA4U_pZKk) · [Website, docs and run reports](https://portage-dev.onrender.com). Portage's workflow has added PayPal to Brewbox (Next.js) and Quill (Express), and `verify_checkout` passed on both with real sandbox payments, real PayPal webhooks and refunds ([Brewbox](benchmark/runs/brewbox-add/README.md), [Quill](benchmark/runs/quill-add/README.md)). A headless Claude Code agent, given only the README prompt on a fresh clone, did the same for Quill unaided ([the run](benchmark/runs/quill-agent-run/README.md)); replace mode on Brewbox and a GitHub Copilot run passed too ([replace mode](benchmark/runs/brewbox-replace-agent-run/README.md), [Copilot](benchmark/runs/quill-copilot-run/README.md)). The Stripe side of every run is Standin; the PayPal side is the real sandbox.
 
 ---
 
@@ -82,7 +82,7 @@ suite/               small test apps used to evaluate Portage                 (b
 benchmark/real-repos scan and plan results on real open-source Stripe apps
 benchmark/runs       full runs on the suite apps, with verify_checkout report cards and screenshots
 scripts/             setup checks, PayPal token refresh, suite end-to-end check, real-repo benchmark
-apps/website         project website with setup prompts and benchmark results (planned)
+apps/website         project website: quickstart, docs, run reports and benchmark results
 apps/webhook-relay   forwards PayPal sandbox webhooks to apps running locally (built; on Render)
 ```
 
